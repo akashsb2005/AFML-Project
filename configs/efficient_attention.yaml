@@ -1,0 +1,24 @@
+# Efficient variant: identical to baseline.yaml except `attention` (controlled comparison).
+# Keep every key except `attention` identical in efficient_attention.yaml (controlled comparison).
+run_name: efficient_linear
+seed: 42
+model:
+  vocab_size: 8000        # set to the trained tokenizer's vocab_size
+  n_layer: 4
+  n_head: 4
+  d_model: 256
+  context_length: 256
+  dropout: 0.1
+  attention: linear      # Katharopoulos et al. (2020) causal linear attention
+train:
+  batch_size: 32
+  lr: 3.0e-4
+  weight_decay: 0.1
+  warmup_steps: 200
+  max_steps: 10000        # same token budget for both variants
+  eval_interval: 250
+  eval_batches: 50
+data:
+  train_tokens: data/tinystories_train.bin
+  val_tokens: data/tinystories_val.bin
+  tokenizer: checkpoints/tokenizer.json

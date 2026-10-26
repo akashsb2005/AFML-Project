@@ -1,0 +1,1 @@
+run_id,date,member,stage,attention,config,seed,git_commit,hardware,dataset,train_tokens,steps,batch_size,context_length,lr,train_loss,val_loss,val_ppl,test_ppl,response_nll,tokens_per_s,peak_mem_mb,wall_time_s,checkpoint,results_file,notes
