@@ -238,7 +238,7 @@ def read_jsonl(path):
 
 def write_jsonl(path, rows):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w") as fh:
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
         for r in rows:
             fh.write(json.dumps(r, ensure_ascii=False) + "\n")
 
