@@ -6,7 +6,9 @@ interface needs to be fixed here and nowhere else.
 from __future__ import annotations
 
 import importlib
+import sys
 import time
+from pathlib import Path
 from dataclasses import dataclass
 
 import torch
@@ -39,16 +41,70 @@ def hardware_string(device: torch.device) -> str:
 
 
 # ----------------------------------------------------------------------------------------- model loading
-def build_model(config: dict, builder: str = "src.model:build_model") -> torch.nn.Module:
+SRC_DIR = str(Path(__file__).resolve().parent)
+# Member 2 writes the tokenizer here (src/tokenizer.py); checkpoints do not record it
+DEFAULT_TOKENIZER = str(Path(__file__).resolve().parents[1] / "artifacts" / "tokenizer" / "tokenizer.json")
+
+# Member 1's models use bare imports (`from attention import ...`), so src/ must be importable directly.
+if SRC_DIR not in sys.path:
+    sys.path.insert(0, SRC_DIR)
+
+
+class LogitsOnly(torch.nn.Module):
+    """Wraps Member 1's models (forward returns (logits, loss)) so evaluation code gets logits only."""
+
+    def __init__(self, inner: torch.nn.Module):
+        super().__init__()
+        self.inner = inner
+
+    def forward(self, input_ids):
+        out = self.inner(input_ids)
+        return out[0] if isinstance(out, (tuple, list)) else out
+
+
+# Member 1 defaults (src/pretrain.py); used only when a checkpoint config lacks a model setting.
+MEMBER1_DEFAULTS = dict(vocab_size=8000, embedding_dim=256, num_heads=4, num_layers=4, max_seq_len=256, dropout=0.1)
+
+
+def member1_kwargs(config: dict) -> tuple[str, dict]:
+    """Map either Member 1's checkpoint config or our YAML model config onto Member 1's constructors.
+    Returns (attention, kwargs) with attention in {"standard", "linear"}."""
+    alias = {"d_model": "embedding_dim", "n_head": "num_heads", "n_layer": "num_layers",
+             "context_length": "max_seq_len"}
+    given = {alias.get(k, k): v for k, v in config.items() if alias.get(k, k) in MEMBER1_DEFAULTS}
+    kw = {**MEMBER1_DEFAULTS, **given}
+    missing = {k: v for k, v in MEMBER1_DEFAULTS.items() if k not in given}
+    att = str(config.get("attention", config.get("model", "standard"))).lower()
+    attention = "linear" if ("linear" in att or "efficient" in att) else "standard"
+    if missing:
+        print(f"[model_api] config has no {sorted(missing)}; using Member 1 defaults {missing}", file=sys.stderr)
+    return attention, kw
+
+
+def build_model(config: dict, builder: str = "auto") -> torch.nn.Module:
+    """builder="auto": Member 1's SmallLanguageModel / EfficientSmallLanguageModel chosen by the config.
+    Otherwise "module:function" (used by the test fixture)."""
+    if builder == "auto":
+        attention, kw = member1_kwargs(config)
+        if attention == "linear":
+            from efficient_model import EfficientSmallLanguageModel as cls
+        else:
+            from model import SmallLanguageModel as cls
+        return LogitsOnly(cls(**kw))
     module, fn = builder.split(":")
     return getattr(importlib.import_module(module), fn)(config)
 
 
-def load_checkpoint(path: str, device: torch.device, builder: str = "src.model:build_model"):
+def load_checkpoint(path: str, device: torch.device, builder: str = "auto", config_override: dict | None = None):
     ckpt = torch.load(path, map_location="cpu", weights_only=False)
-    model = build_model(ckpt["config"], builder)
-    model.load_state_dict(ckpt["model_state"])
+    config = dict(ckpt.get("config") or {})
+    config.update(config_override or {})
+    model = build_model(config, builder)
+    state = ckpt.get("model_state_dict", ckpt.get("model_state"))
+    target = model.inner if isinstance(model, LogitsOnly) else model
+    target.load_state_dict(state)
     model.to(device).eval()
+    ckpt["config"] = config
     return model, ckpt
 
 

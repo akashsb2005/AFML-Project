@@ -238,7 +238,7 @@ def read_jsonl(path):
 
 def write_jsonl(path, rows):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w") as fh:
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
         for r in rows:
             fh.write(json.dumps(r, ensure_ascii=False) + "\n")
 
@@ -340,7 +340,8 @@ def context_length_of(ckpt: dict, override: int | None = None) -> int:
     if override:
         return override
     cfg = ckpt.get("config", {})
-    for k in ("context_length", "block_size", "max_seq_len", "seq_len"):
+    # block_size = length the model was trained on (Member 1 trains at 128 with max_seq_len 256)
+    for k in ("block_size", "context_length", "max_seq_len", "seq_len"):
         if k in cfg:
             return int(cfg[k])
     raise KeyError("context length not in checkpoint config — pass --context-length")
@@ -349,7 +350,7 @@ def context_length_of(ckpt: dict, override: int | None = None) -> int:
 def _load(args):
     device = model_api.pick_device(args.device)
     model, ckpt = model_api.load_checkpoint(args.ckpt, device, args.builder)
-    tok = model_api.load_tokenizer(args.tokenizer or ckpt["tokenizer_path"])
+    tok = model_api.load_tokenizer(args.tokenizer or ckpt.get("tokenizer_path") or model_api.DEFAULT_TOKENIZER)
     return device, model, ckpt, tok
 
 
@@ -366,7 +367,7 @@ def main(argv=None):
     def common(p):
         p.add_argument("--ckpt", required=True)
         p.add_argument("--tokenizer", default=None, help="defaults to the checkpoint's tokenizer_path")
-        p.add_argument("--builder", default="src.model:build_model")
+        p.add_argument("--builder", default="auto")
         p.add_argument("--device", default="auto")
         p.add_argument("--label", required=True, help="run id used in output file names")
         p.add_argument("--context-length", type=int, default=None, help="defaults to the checkpoint config")

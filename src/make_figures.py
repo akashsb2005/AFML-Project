@@ -48,12 +48,13 @@ def read_train_log(path):
     with open(path) as fh:
         for r in csv.DictReader(fh):
             x = float(r.get("tokens_seen") or r["step"])
+            val_value = r.get("val_loss") or r.get("validation_loss")   # Member 1 logs "validation_loss"
             if r.get("train_loss"):
                 steps.append(x)
                 train.append(float(r["train_loss"]))
-            if r.get("val_loss"):
+            if val_value:
                 val_x.append(x)
-                val.append(float(r["val_loss"]))
+                val.append(float(val_value))
     return steps, train, val_x, val
 
 
