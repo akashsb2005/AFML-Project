@@ -1,0 +1,63 @@
+{
+  "label": "gpu_t4",
+  "hardware": "Tesla T4",
+  "batch_size": 8,
+  "variants": {
+    "baseline": {
+      "attention": "standard",
+      "params": 5273088,
+      "train_tokens_per_s": 69143.31400182827,
+      "gen_ms_per_token_median": 3.54121391406248,
+      "forward": {
+        "128": {
+          "forward_ms_median": 4.3927615000143305,
+          "forward_peak_mem_mb": 95.1767578125
+        },
+        "256": {
+          "forward_ms_median": 8.925976000000446,
+          "forward_peak_mem_mb": 127.810546875
+        },
+        "512": {
+          "forward_ms_median": 21.296074999952452,
+          "forward_peak_mem_mb": 195.953125
+        },
+        "1024": {
+          "forward_ms_median": 55.11829700000703,
+          "forward_peak_mem_mb": 383.11328125
+        },
+        "2048": {
+          "forward_ms_median": 162.53326949998836,
+          "forward_peak_mem_mb": 1219.18359375
+        }
+      }
+    },
+    "efficient_attention": {
+      "attention": "linear",
+      "params": 5273088,
+      "train_tokens_per_s": 27406.00649736274,
+      "gen_ms_per_token_median": 3.9166537578123606,
+      "forward": {
+        "128": {
+          "forward_ms_median": 11.055809499993074,
+          "forward_peak_mem_mb": 258.0517578125
+        },
+        "256": {
+          "forward_ms_median": 21.723649500017927,
+          "forward_peak_mem_mb": 455.060546875
+        },
+        "512": {
+          "forward_ms_median": 43.72343600002182,
+          "forward_peak_mem_mb": 849.078125
+        },
+        "1024": {
+          "forward_ms_median": 87.1211915000174,
+          "forward_peak_mem_mb": 1637.11328125
+        },
+        "2048": {
+          "forward_ms_median": 175.74927150002395,
+          "forward_peak_mem_mb": 3213.18359375
+        }
+      }
+    }
+  }
+}

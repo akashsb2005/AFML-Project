@@ -70,6 +70,14 @@ one rater), hardware and noise; don't claim "improves" without a measured, large
 
 * What is your final validation perplexity, and what does it mean compared with 8000? — _TBD_
 * Did SFT reduce response NLL, and by how much? Did rubric scores agree? — _TBD_
-* At which sequence length (if any) is linear attention faster / lighter than softmax on our GPU? — _TBD_
-* What did linear attention cost in perplexity? — _TBD_
+* At which sequence length (if any) is linear attention faster / lighter than softmax on our GPU? — On the T4,
+  at **none of the lengths we measured (128–2048)**. It trains at 0.35–0.40× the speed and uses 2.2–2.5× the
+  memory. But its forward time grows ≈ 2.0× per doubling of T against 2.0 → 2.95× for softmax, so the gap shrinks
+  from 2.52× (T = 128) to 1.08× (T = 2048); a crossover beyond 2048 is an extrapolation, not a measurement. Reason:
+  the causal implementation stores a 64 × 64 state per token and head (4,096 numbers) vs T scores for softmax.
+* Why are both models the same size? — Linear attention changes how Q, K, V are combined, not the number of
+  projections; both have 5,273,088 parameters (tied input/output embeddings).
+* How do you know the speed difference is real and not noise? — 4 identical runs: standard 68,325 ± 903 tokens/s,
+  linear 27,094 ± 226 — the difference is ~40 standard deviations.
+* What did linear attention cost in perplexity? — _TBD (needs the matched training runs)_
 * Give one failure example and its likely cause. — _TBD_
