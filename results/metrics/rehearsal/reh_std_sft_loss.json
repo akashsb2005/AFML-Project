@@ -1,0 +1,13 @@
+{
+  "mean_response_nll": 7.076552342908815,
+  "response_perplexity": 1183.8798626138241,
+  "response_tokens": 52692,
+  "examples": 737,
+  "truncated": 413,
+  "skipped_no_response_tokens": 0,
+  "example_builder": "DollySFTDataset rules",
+  "label": "reh_std",
+  "data": "data/processed/dolly_test.jsonl",
+  "excluded_overlapping_prompts": 13,
+  "note": "pre-trained (not fine-tuned) standard model; context 128"
+}

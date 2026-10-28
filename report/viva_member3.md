@@ -79,5 +79,12 @@ one rater), hardware and noise; don't claim "improves" without a measured, large
   projections; both have 5,273,088 parameters (tied input/output embeddings).
 * How do you know the speed difference is real and not noise? — 4 identical runs: standard 68,325 ± 903 tokens/s,
   linear 27,094 ± 226 — the difference is ~40 standard deviations.
-* What did linear attention cost in perplexity? — _TBD (needs the matched training runs)_
+* What did linear attention cost in perplexity? — Provisional rehearsal (3,000 identical steps): validation
+  perplexity 16.81 vs 15.42 for softmax (9 % higher), and 2.8× the training time. Both were still improving, so the
+  final gap needs the official longer runs.
+* Why is your validation loss lower than the training loss early on? — The training loss is averaged over the
+  last 250 steps (the model was worse at the start of that window) and computed with dropout on; validation
+  is measured at the end of the window with dropout off.
+* Why does the pre-trained model answer "What is TESSA?" with a story? — It has only ever seen children's
+  stories; instruction following is exactly what SFT has to add.
 * Give one failure example and its likely cause. — _TBD_
