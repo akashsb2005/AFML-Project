@@ -30,7 +30,7 @@ def evaluate(model, loader, device, max_batches=None):
             ids = batch["input_ids"].to(device)
             labels = batch["labels"].to(device)
             mask = batch["attention_mask"].to(device)
-            logits, _ = model(ids, attention_mask=mask)
+            logits = model(ids, attention_mask=mask)
             losses = F.cross_entropy(
                 logits.reshape(-1, model.vocab_size),
                 labels.reshape(-1),
