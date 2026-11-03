@@ -114,12 +114,22 @@ def _save_checkpoint(path: Path, *, step: int, tokens_seen: int, model,
                      validation_loss: float, best_validation_loss: float | None,
                      elapsed_s: float, data_rng_state: torch.Tensor) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    # Keep model fields at the top level for src.model_api.load_checkpoint(),
+    # while retaining nested sections for reproducibility and resume validation.
+    checkpoint_config = dict(config["model"])
+    checkpoint_config.update({
+        "model": dict(config["model"]),
+        "train": dict(config["train"]),
+        "data": dict(config["data"]),
+        "seed": config.get("seed", 42),
+        "training": dict(config.get("training", {})),
+    })
     state = {
         "step": step,
         "tokens_seen": tokens_seen,
         "model_state": model.state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
-        "config": config,
+        "config": checkpoint_config,
         "tokenizer_path": str(PROJECT / config["data"]["tokenizer"]),
         "train_loss": train_loss,
         "validation_loss": validation_loss,
