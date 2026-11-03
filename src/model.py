@@ -2,7 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from attention import CausalSelfAttention
+try:
+    from .attention import CausalSelfAttention
+except ImportError:  # Support direct execution with src/ on sys.path.
+    from attention import CausalSelfAttention
 
 
 class FeedForward(nn.Module):
@@ -121,7 +124,10 @@ def build_model(config: dict) -> nn.Module:
         "dropout": float(config.get("dropout", 0.1)),
     }
     if attention in {"linear", "causal_linear_elu_plus_one"}:
-        from efficient_model import EfficientSmallLanguageModel
+        try:
+            from .efficient_model import EfficientSmallLanguageModel
+        except ImportError:  # Support direct execution with src/ on sys.path.
+            from efficient_model import EfficientSmallLanguageModel
         return EfficientSmallLanguageModel(**common)
     if attention != "standard":
         raise ValueError(f"Unsupported attention variant: {attention}")
