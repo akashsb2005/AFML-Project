@@ -25,31 +25,40 @@ Member 3's evaluation reproduces both constructions exactly (`evaluate.story_blo
 `evaluate.build_sft_example`; checked to be identical to the dataset classes on the validation/test
 splits), so evaluation losses are the same quantities as the training losses.
 
-## Model — Member 1 (*to be confirmed by Akash — code not yet in the repository*)
+## Model — Member 1 (implemented in `src/model.py` and `src/efficient_model.py`)
 
-Member 3 needs, from `src/model.py`:
+Member 3 builds either attention variant through `src.model:build_model(config)`. The factory maps the
+shared config keys `vocab_size`, `d_model`, `n_head`, `n_layer`, `context_length`, `dropout`, and
+`attention` to the corresponding model implementation.
 
-```python
-def build_model(config: dict) -> torch.nn.Module      # or the class name + config keys actually used
-```
+`model(input_ids)` returns logits directly with shape `[B, T, vocab_size]`, as required by the
+evaluation and generation adapter. When `targets` are supplied, forward returns `(logits, loss)`.
+Both variants accept an optional `attention_mask`; target value `-100` is ignored by the loss.
 
-`model(input_ids)` with `input_ids: LongTensor[B, T]` (T ≤ context length) → `logits: FloatTensor[B, T, V]`,
-causal (logits at t depend only on tokens ≤ t). If `forward` also takes `targets`/`labels` or returns a
-tuple/dict, tell Member 3 — `src/model_api.py` will unwrap it.
+### Checkpoint format
 
-Config keys Member 3 reads: `vocab_size`, the context length (`context_length` / `block_size` /
-`max_seq_len`), and the attention variant (`attention: standard | linear`). Everything else is passed
-through unchanged.
+Training checkpoints use `model_state` (the key consumed by `src/model_api.py`), a model-loader-compatible
+`config` (model fields at the top level, plus nested `model`, `train`, `data`, `seed`, and
+`training` metadata), `step`, `tokens_seen`, `train_loss`, `validation_loss`, optimizer state,
+elapsed time, and random-number-generator states. A separate `best_checkpoint.pt` stores the
+lowest validation-loss checkpoint. Resume accepts the legacy `model_state_dict` key from older runs
+where applicable, and restores optimizer and RNG state.
 
-### Checkpoint format (to be confirmed)
+## Pretraining commands
 
-```python
-torch.save({"model_state": model.state_dict(), "config": config_dict,
-            "tokenizer_path": "artifacts/tokenizer/tokenizer.json", "step": int, "stage": "pretrain"|"sft"},
-           "checkpoints/<run_id>.pt")
-```
+`python src/pretrain.py` reads `configs/baseline.yaml`; `python src/pretrain_efficient.py`
+reads `configs/efficient_attention.yaml`. Both use the same shared `src/training.py` loop.
+Command-line overrides are available, for example `--max_steps 20 --batch_size 4` for a smoke run.
+The configured schedule is linear learning-rate warmup for `warmup_steps`, followed by a constant
+learning rate. Both attention variants must use identical settings and the same data/tokenizer artifacts.
+The scripts fail early with the missing artifact path if Member 2's TinyStories files or tokenizer
+have not yet been supplied.
 
-### Training log (to be confirmed)
+The training CSV is written once per optimizer step using the columns below. Validation loss is
+populated only at evaluation steps; `tokens_seen` counts non-padding supervised target tokens.
+Existing logs with a different header are rejected to prevent mixing incompatible runs.
+
+### Training log
 
 `results/metrics/<run_id>_train_log.csv` with columns `step,tokens_seen,train_loss,val_loss,lr,elapsed_s`
 (`val_loss` empty on steps without evaluation). `tokens_seen` should count non-padding tokens.

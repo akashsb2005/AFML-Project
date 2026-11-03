@@ -1,9 +1,9 @@
-# Baseline: standard causal softmax attention (plan §2 B, initial configuration — Member 1 may adjust).
-# Keep every key except `attention` identical in efficient_attention.yaml (controlled comparison).
+# Baseline: standard causal softmax attention.
+# Keep all settings identical to efficient_attention.yaml except attention.
 run_name: baseline_standard
 seed: 42
 model:
-  vocab_size: 8000        # set to the trained tokenizer's vocab_size
+  vocab_size: 8000
   n_layer: 4
   n_head: 4
   d_model: 256
@@ -15,10 +15,10 @@ train:
   lr: 3.0e-4
   weight_decay: 0.1
   warmup_steps: 200
-  max_steps: 10000        # same token budget for both variants
+  max_steps: 10000
   eval_interval: 250
   eval_batches: 50
 data:
-  train_tokens: data/tinystories_train.bin
-  val_tokens: data/tinystories_val.bin
-  tokenizer: checkpoints/tokenizer.json
+  train_jsonl: data/processed/tiny_stories_train.jsonl
+  validation_jsonl: data/processed/tiny_stories_validation.jsonl
+  tokenizer: artifacts/tokenizer/tokenizer.json
