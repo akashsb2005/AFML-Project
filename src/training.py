@@ -108,7 +108,7 @@ def _write_log_header(path: Path) -> None:
 def _save_checkpoint(path: Path, *, step: int, tokens_seen: int, model,
                      optimizer, config: dict, train_loss: float,
                      validation_loss: float, best_validation_loss: float | None,
-                     elapsed_s: float) -> None:
+                     elapsed_s: float, data_rng_state: torch.Tensor) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     state = {
         "step": step,
@@ -123,6 +123,7 @@ def _save_checkpoint(path: Path, *, step: int, tokens_seen: int, model,
         "elapsed_s": elapsed_s,
         "python_rng_state": random.getstate(),
         "torch_rng_state": torch.get_rng_state(),
+        "data_loader_rng_state": data_rng_state,
     }
     if torch.cuda.is_available():
         state["cuda_rng_state_all"] = torch.cuda.get_rng_state_all()
@@ -201,6 +202,17 @@ def run_training(attention: str, argv=None) -> None:
     if device.type == "cuda":
         print(f"GPU: {torch.cuda.get_device_name(0)}")
 
+    # Fail early with actionable paths instead of an opaque dataset/tokenizer error.
+    for key in ("train_jsonl", "validation_jsonl", "tokenizer"):
+        artifact = Path(config["data"][key])
+        if not artifact.is_absolute():
+            artifact = PROJECT / artifact
+        if not artifact.exists():
+            raise FileNotFoundError(
+                f"Required {key} artifact is missing: {artifact}. "
+                "Coordinate with Member 2 before starting pretraining."
+            )
+
     train_dataset = TinyStoriesDataset(split="train", block_size=block_size)
     val_dataset = TinyStoriesDataset(split="validation", block_size=block_size)
     batch_size = int(train_cfg["batch_size"])
@@ -248,6 +260,8 @@ def run_training(attention: str, argv=None) -> None:
             torch.set_rng_state(saved["torch_rng_state"].cpu())
         if device.type == "cuda" and "cuda_rng_state_all" in saved:
             torch.cuda.set_rng_state_all(saved["cuda_rng_state_all"])
+        if "data_loader_rng_state" in saved:
+            generator.set_state(saved["data_loader_rng_state"].cpu())
         print(f"Resumed checkpoint at step {start_step}; tokens_seen={tokens_seen}")
 
     config["seed"] = seed
@@ -301,31 +315,28 @@ def run_training(attention: str, argv=None) -> None:
         window_tokens += valid_tokens
         should_eval = step % int(train_cfg["eval_interval"]) == 0 or step == int(train_cfg["max_steps"])
         val_loss = ""
+        elapsed_now = elapsed_before + (time.time() - started)
+        val_loss = ""
         if should_eval:
             train_loss = window_loss_sum / window_tokens
             val_loss, val_tokens = evaluate(
                 model, val_loader, device, int(train_cfg["eval_batches"])
             )
             elapsed = elapsed_before + (time.time() - started)
-            with log_path.open("a", newline="", encoding="utf-8") as handle:
-                csv.DictWriter(handle, fieldnames=LOG_FIELDS).writerow({
-                    "step": step, "tokens_seen": tokens_seen,
-                    "train_loss": f"{train_loss:.6f}", "val_loss": f"{val_loss:.6f}",
-                    "lr": f"{lr:.8g}", "elapsed_s": f"{elapsed:.2f}",
-                })
+            elapsed_now = elapsed
             if best_val is None or val_loss < best_val:
                 best_val = val_loss
                 _save_checkpoint(
                     best_path, step=step, tokens_seen=tokens_seen, model=model,
                     optimizer=optimizer, config=config, train_loss=train_loss,
                     validation_loss=val_loss, best_validation_loss=best_val,
-                    elapsed_s=elapsed,
+                    elapsed_s=elapsed, data_rng_state=generator.get_state(),
                 )
             _save_checkpoint(
                 checkpoint_path, step=step, tokens_seen=tokens_seen, model=model,
                 optimizer=optimizer, config=config, train_loss=train_loss,
                 validation_loss=val_loss, best_validation_loss=best_val,
-                elapsed_s=elapsed,
+                elapsed_s=elapsed, data_rng_state=generator.get_state(),
             )
             print(
                 f"Step {step}/{train_cfg['max_steps']} | train loss {train_loss:.4f} | "
@@ -333,6 +344,15 @@ def run_training(attention: str, argv=None) -> None:
                 f"tokens {tokens_seen} | elapsed {elapsed:.1f}s"
             )
             window_loss_sum, window_tokens = 0.0, 0
+
+        # One row per optimizer step; val_loss is populated only on evaluation steps.
+        with log_path.open("a", newline="", encoding="utf-8") as handle:
+            csv.DictWriter(handle, fieldnames=LOG_FIELDS).writerow({
+                "step": step, "tokens_seen": tokens_seen,
+                "train_loss": f"{float(loss.item()):.6f}",
+                "val_loss": "" if val_loss == "" else f"{float(val_loss):.6f}",
+                "lr": f"{lr:.8g}", "elapsed_s": f"{elapsed_now:.2f}",
+            })
 
     print(f"Training finished: {run_name} at step {step}")
     print(f"Last checkpoint: {checkpoint_path}")
