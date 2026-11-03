@@ -82,3 +82,34 @@ def test_model_factory_builds_both_attention_variants():
     assert isinstance(linear, EfficientSmallLanguageModel)
     assert standard(torch.ones((1, 5), dtype=torch.long)).shape == (1, 5, 64)
     assert linear(torch.ones((1, 5), dtype=torch.long)).shape == (1, 5, 64)
+
+
+
+def test_efficient_model_rejects_all_padding_attention_mask():
+    model = EfficientSmallLanguageModel(
+        vocab_size=32, embedding_dim=16, num_heads=4,
+        num_layers=1, max_seq_len=8,
+    )
+    input_ids = torch.ones((2, 4), dtype=torch.long)
+    bad_mask = torch.tensor([[1, 1, 0, 0], [0, 0, 0, 0]])
+    try:
+        model(input_ids, attention_mask=bad_mask)
+    except ValueError as exc:
+        assert "at least one valid token" in str(exc)
+    else:
+        raise AssertionError("Expected an all-padding sequence to fail")
+
+
+def test_efficient_model_rejects_mismatched_target_shape():
+    model = EfficientSmallLanguageModel(
+        vocab_size=32, embedding_dim=16, num_heads=4,
+        num_layers=1, max_seq_len=8,
+    )
+    input_ids = torch.ones((2, 4), dtype=torch.long)
+    targets = torch.ones((2, 3), dtype=torch.long)
+    try:
+        model(input_ids, targets=targets)
+    except ValueError as exc:
+        assert "targets" in str(exc)
+    else:
+        raise AssertionError("Expected mismatched target shape to fail")
