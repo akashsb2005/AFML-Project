@@ -32,6 +32,7 @@ def test_efficient_model_shape():
     logits, loss = model(x, targets=x)
     assert logits.shape == (2, 8, 128)
     assert loss is not None and torch.isfinite(loss)
+    assert model(x).shape == (2, 8, 128)
 
 
 def test_standard_model_accepts_padding_mask_and_ignores_padding_labels():
