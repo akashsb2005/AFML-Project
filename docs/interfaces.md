@@ -27,27 +27,19 @@ splits), so evaluation losses are the same quantities as the training losses.
 
 ## Model — Member 1 (implemented in `src/model.py` and `src/efficient_model.py`)
 
-Member 3 needs, from `src/model.py`:
+Member 3 builds either attention variant through `src.model:build_model(config)`. The factory maps the
+shared config keys `vocab_size`, `d_model`, `n_head`, `n_layer`, `context_length`, `dropout`, and
+`attention` to the corresponding model implementation.
 
-```python
-def build_model(config: dict) -> torch.nn.Module      # or the class name + config keys actually used
-```
-
-`model(input_ids)` with `input_ids: LongTensor[B, T]` (T ≤ context length) → `logits: FloatTensor[B, T, V]`,
-causal (logits at t depend only on tokens ≤ t). If `forward` also takes `targets`/`labels` or returns a
-tuple/dict, tell Member 3 — `src/model_api.py` will unwrap it.
-
-Config keys Member 3 reads: `vocab_size`, the context length (`context_length` / `block_size` /
-`max_seq_len`), and the attention variant (`attention: standard | linear`). Everything else is passed
-through unchanged.
+`model(input_ids)` returns logits directly with shape `[B, T, vocab_size]`, as required by the
+evaluation and generation adapter. When `targets` are supplied, forward returns `(logits, loss)`.
+Both variants accept an optional `attention_mask`; target value `-100` is ignored by the loss.
 
 ### Checkpoint format
 
-```python
-torch.save({"model_state": model.state_dict(), "config": config_dict,
-            "tokenizer_path": "artifacts/tokenizer/tokenizer.json", "step": int, "stage": "pretrain"|"sft"},
-           "checkpoints/<run_id>.pt")
-```
+Training checkpoints use `model_state` (the key consumed by `src/model_api.py`), `config`,
+`step`, `train_loss`, and `validation_loss`. Resume logic accepts the older
+`model_state_dict` key for backward compatibility.
 
 ### Training log
 
