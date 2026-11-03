@@ -25,7 +25,7 @@ Member 3's evaluation reproduces both constructions exactly (`evaluate.story_blo
 `evaluate.build_sft_example`; checked to be identical to the dataset classes on the validation/test
 splits), so evaluation losses are the same quantities as the training losses.
 
-## Model — Member 1 (*to be confirmed by Akash — code not yet in the repository*)
+## Model — Member 1 (implemented in `src/model.py` and `src/efficient_model.py`)
 
 Member 3 needs, from `src/model.py`:
 
@@ -41,7 +41,7 @@ Config keys Member 3 reads: `vocab_size`, the context length (`context_length` /
 `max_seq_len`), and the attention variant (`attention: standard | linear`). Everything else is passed
 through unchanged.
 
-### Checkpoint format (to be confirmed)
+### Checkpoint format
 
 ```python
 torch.save({"model_state": model.state_dict(), "config": config_dict,
@@ -49,7 +49,7 @@ torch.save({"model_state": model.state_dict(), "config": config_dict,
            "checkpoints/<run_id>.pt")
 ```
 
-### Training log (to be confirmed)
+### Training log
 
 `results/metrics/<run_id>_train_log.csv` with columns `step,tokens_seen,train_loss,val_loss,lr,elapsed_s`
 (`val_loss` empty on steps without evaluation). `tokens_seen` should count non-padding tokens.
