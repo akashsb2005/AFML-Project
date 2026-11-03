@@ -2,7 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from efficient_attention import LinearCausalSelfAttention
+try:
+    from .efficient_attention import LinearCausalSelfAttention
+except ImportError:  # Support direct execution with src/ on sys.path.
+    from efficient_attention import LinearCausalSelfAttention
 
 
 class EfficientTransformerBlock(nn.Module):
