@@ -105,4 +105,24 @@ class SmallLanguageModel(nn.Module):
                 targets.reshape(-1),
                 ignore_index=-100,
             )
-        return logits, loss
+        # Evaluation and generation APIs consume logits when no targets are supplied.
+        return (logits, loss) if targets is not None else logits
+
+
+def build_model(config: dict) -> nn.Module:
+    """Build a model from the shared model configuration."""
+    attention = config.get("attention", "standard")
+    common = {
+        "vocab_size": int(config.get("vocab_size", 8000)),
+        "embedding_dim": int(config.get("d_model", config.get("embedding_dim", 256))),
+        "num_heads": int(config.get("n_head", config.get("num_heads", 4))),
+        "num_layers": int(config.get("n_layer", config.get("num_layers", 4))),
+        "max_seq_len": int(config.get("context_length", config.get("max_seq_len", 256))),
+        "dropout": float(config.get("dropout", 0.1)),
+    }
+    if attention in {"linear", "causal_linear_elu_plus_one"}:
+        from efficient_model import EfficientSmallLanguageModel
+        return EfficientSmallLanguageModel(**common)
+    if attention != "standard":
+        raise ValueError(f"Unsupported attention variant: {attention}")
+    return SmallLanguageModel(**common)
