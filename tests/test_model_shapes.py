@@ -62,3 +62,23 @@ def test_standard_model_rejects_mismatched_attention_mask():
         assert "attention_mask" in str(exc)
     else:
         raise AssertionError("Expected mismatched attention mask to fail")
+
+
+def test_model_factory_builds_both_attention_variants():
+    from model import build_model
+
+    common = {
+        "vocab_size": 64,
+        "d_model": 32,
+        "n_head": 4,
+        "n_layer": 1,
+        "context_length": 12,
+        "dropout": 0.0,
+    }
+    standard = build_model({**common, "attention": "standard"})
+    linear = build_model({**common, "attention": "linear"})
+
+    assert isinstance(standard, SmallLanguageModel)
+    assert isinstance(linear, EfficientSmallLanguageModel)
+    assert standard(torch.ones((1, 5), dtype=torch.long)).shape == (1, 5, 64)
+    assert linear(torch.ones((1, 5), dtype=torch.long)).shape == (1, 5, 64)
