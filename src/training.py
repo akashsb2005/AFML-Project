@@ -351,7 +351,6 @@ def run_training(attention: str, argv=None) -> None:
         should_eval = step % int(train_cfg["eval_interval"]) == 0 or step == int(train_cfg["max_steps"])
         val_loss = ""
         elapsed_now = elapsed_before + (time.time() - started)
-        val_loss = ""
         if should_eval:
             train_loss = window_loss_sum / window_tokens
             val_loss, val_tokens = evaluate(
