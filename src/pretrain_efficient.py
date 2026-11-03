@@ -50,7 +50,7 @@ def save_checkpoint(path, step, model, optimizer, config, train_loss, val_loss):
     path.parent.mkdir(parents=True, exist_ok=True)
     state = {
         "step": step,
-        "model_state_dict": model.state_dict(),
+        "model_state": model.state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
         "config": config,
         "train_loss": train_loss,
@@ -135,7 +135,7 @@ def main():
         if not checkpoint_path.exists():
             raise FileNotFoundError(f"Cannot resume; checkpoint missing: {checkpoint_path}")
         saved = torch.load(checkpoint_path, map_location=device, weights_only=False)
-        model.load_state_dict(saved["model_state_dict"])
+        model.load_state_dict(saved.get("model_state", saved.get("model_state_dict")))
         optimizer.load_state_dict(saved["optimizer_state_dict"])
         start_step = int(saved["step"])
         if start_step >= args.max_steps:
