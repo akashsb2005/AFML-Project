@@ -8,6 +8,7 @@ from src.training import (
     LOG_FIELDS,
     _set_learning_rate,
     _write_log_header,
+    _save_checkpoint,
     evaluate,
     load_config,
     validate_config,
@@ -82,3 +83,35 @@ def test_training_log_rejects_incompatible_existing_file(tmp_path):
     path.write_text("step,loss\n1,2.0\n", encoding="utf-8")
     with pytest.raises(ValueError, match="Choose a new"):
         _write_log_header(path)
+
+
+
+def test_checkpoint_config_loads_through_member3_model_api(tmp_path):
+    from src.model import build_model
+    from src.model_api import load_checkpoint
+
+    model_config = {
+        "vocab_size": 17, "n_layer": 1, "n_head": 1,
+        "d_model": 8, "context_length": 8, "dropout": 0.0,
+        "attention": "standard",
+    }
+    config = {
+        "model": model_config,
+        "train": {"batch_size": 1},
+        "data": {"tokenizer": "artifacts/tokenizer/tokenizer.json"},
+        "seed": 42,
+        "training": {},
+    }
+    model = build_model(model_config)
+    optimizer = torch.optim.AdamW(model.parameters())
+    path = tmp_path / "checkpoint.pt"
+    _save_checkpoint(
+        path, step=1, tokens_seen=3, model=model, optimizer=optimizer,
+        config=config, train_loss=1.0, validation_loss=1.1,
+        best_validation_loss=1.1, elapsed_s=2.0,
+        data_rng_state=torch.Generator().get_state(),
+    )
+    loaded, checkpoint = load_checkpoint(str(path), torch.device("cpu"))
+    assert loaded(torch.ones((1, 4), dtype=torch.long)).shape == (1, 4, 17)
+    assert checkpoint["step"] == 1
+    assert checkpoint["tokens_seen"] == 3
