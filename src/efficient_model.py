@@ -124,6 +124,8 @@ class EfficientSmallLanguageModel(nn.Module):
         loss = None
 
         if targets is not None:
+            if targets.shape != input_ids.shape:
+                raise ValueError("targets must match input_ids shape")
             loss = F.cross_entropy(
                 logits.reshape(-1, self.vocab_size),
                 targets.reshape(-1),
