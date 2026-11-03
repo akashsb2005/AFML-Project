@@ -53,11 +53,20 @@ def validate_config(config: dict) -> None:
     for key in required_train:
         if key not in train:
             raise ValueError(f"Missing train.{key} in configuration")
+    for key in ("train_jsonl", "validation_jsonl", "tokenizer"):
+        if key not in config["data"]:
+            raise ValueError(f"Missing data.{key} in configuration")
     positive = ("batch_size", "max_steps", "eval_interval", "eval_batches")
     if any(int(train[k]) < 1 for k in positive):
         raise ValueError("batch_size, max_steps, eval_interval and eval_batches must be positive")
     if int(train["warmup_steps"]) < 0:
         raise ValueError("warmup_steps cannot be negative")
+    if float(train["lr"]) <= 0:
+        raise ValueError("train.lr must be positive")
+    if float(train["weight_decay"]) < 0:
+        raise ValueError("train.weight_decay cannot be negative")
+    if not 0.0 <= float(model["dropout"]) < 1.0:
+        raise ValueError("model.dropout must be in [0, 1)")
     if int(model["context_length"]) < 2:
         raise ValueError("model.context_length must be at least 2")
     if int(model["d_model"]) % int(model["n_head"]):
