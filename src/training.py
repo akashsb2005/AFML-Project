@@ -155,6 +155,24 @@ def _set_learning_rate(optimizer, base_lr: float, step: int, warmup_steps: int) 
     return lr
 
 
+
+def _canonical_model_config(config: dict) -> dict:
+    """Normalize current and legacy checkpoint model keys for resume validation."""
+    source = config.get("model", config)
+    attention = source.get("attention", "standard")
+    if attention == "causal_linear_elu_plus_one":
+        attention = "linear"
+    return {
+        "vocab_size": int(source.get("vocab_size", 8000)),
+        "n_layer": int(source.get("n_layer", source.get("num_layers", 4))),
+        "n_head": int(source.get("n_head", source.get("num_heads", 4))),
+        "d_model": int(source.get("d_model", source.get("embedding_dim", 256))),
+        "context_length": int(source.get("context_length", source.get("max_seq_len", 256))),
+        "dropout": float(source.get("dropout", 0.1)),
+        "attention": attention,
+    }
+
+
 def run_training(attention: str, argv=None) -> None:
     default_config = PROJECT / "configs" / (
         "baseline.yaml" if attention == "standard" else "efficient_attention.yaml"
@@ -258,9 +276,12 @@ def run_training(attention: str, argv=None) -> None:
             raise FileNotFoundError(f"Cannot resume; checkpoint missing: {checkpoint_path}")
         saved = torch.load(checkpoint_path, map_location=device, weights_only=False)
         saved_config = saved.get("config", {})
-        if saved_config.get("model") != config.get("model"):
+        if _canonical_model_config(saved_config) != _canonical_model_config(config):
             raise ValueError("Checkpoint model configuration differs from requested configuration.")
-        model.load_state_dict(saved["model_state"])
+        model_state = saved.get("model_state", saved.get("model_state_dict"))
+        if model_state is None:
+            raise KeyError("Checkpoint is missing model_state/model_state_dict.")
+        model.load_state_dict(model_state)
         optimizer.load_state_dict(saved["optimizer_state_dict"])
         start_step = int(saved["step"])
         tokens_seen = int(saved.get("tokens_seen", 0))
