@@ -37,9 +37,26 @@ Both variants accept an optional `attention_mask`; target value `-100` is ignore
 
 ### Checkpoint format
 
-Training checkpoints use `model_state` (the key consumed by `src/model_api.py`), `config`,
-`step`, `train_loss`, and `validation_loss`. Resume logic accepts the older
-`model_state_dict` key for backward compatibility.
+Training checkpoints use `model_state` (the key consumed by `src/model_api.py`), a model-loader-compatible
+`config` (model fields at the top level, plus nested `model`, `train`, `data`, `seed`, and
+`training` metadata), `step`, `tokens_seen`, `train_loss`, `validation_loss`, optimizer state,
+elapsed time, and random-number-generator states. A separate `best_checkpoint.pt` stores the
+lowest validation-loss checkpoint. Resume accepts the legacy `model_state_dict` key from older runs
+where applicable, and restores optimizer and RNG state.
+
+## Pretraining commands
+
+`python src/pretrain.py` reads `configs/baseline.yaml`; `python src/pretrain_efficient.py`
+reads `configs/efficient_attention.yaml`. Both use the same shared `src/training.py` loop.
+Command-line overrides are available, for example `--max_steps 20 --batch_size 4` for a smoke run.
+The configured schedule is linear learning-rate warmup for `warmup_steps`, followed by a constant
+learning rate. Both attention variants must use identical settings and the same data/tokenizer artifacts.
+The scripts fail early with the missing artifact path if Member 2's TinyStories files or tokenizer
+have not yet been supplied.
+
+The training CSV is written once per optimizer step using the columns below. Validation loss is
+populated only at evaluation steps; `tokens_seen` counts non-padding supervised target tokens.
+Existing logs with a different header are rejected to prevent mixing incompatible runs.
 
 ### Training log
 
