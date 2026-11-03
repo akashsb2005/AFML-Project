@@ -127,4 +127,5 @@ class EfficientSmallLanguageModel(nn.Module):
                 ignore_index=-100
             )
 
-        return logits, loss
+        # Evaluation and generation APIs consume logits when no targets are supplied.
+        return (logits, loss) if targets is not None else logits
