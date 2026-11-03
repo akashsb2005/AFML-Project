@@ -17,8 +17,12 @@ import torch.nn.functional as F
 import yaml
 from torch.utils.data import DataLoader
 
-from dataset import TinyStoriesDataset
-from model import build_model
+try:
+    from .dataset import TinyStoriesDataset
+    from .model import build_model
+except ImportError:  # Support direct script execution with src/ on sys.path.
+    from dataset import TinyStoriesDataset
+    from model import build_model
 
 SRC = Path(__file__).resolve().parent
 PROJECT = SRC.parent
