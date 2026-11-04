@@ -87,4 +87,13 @@ one rater), hardware and noise; don't claim "improves" without a measured, large
   is measured at the end of the window with dropout off.
 * Why does the pre-trained model answer "What is TESSA?" with a story? — It has only ever seen children's
   stories; instruction following is exactly what SFT has to add.
-* Give one failure example and its likely cause. — _TBD_
+* Why did repetition get worse after fine-tuning when the loss improved? — Provisional rehearsal: response NLL fell
+  from 6.96 to 4.18 but greedy 4-gram repetition rose from 0.27 to 0.65. NLL scores each next token given the true previous tokens;
+  greedy decoding feeds the model its own output, so one repeated phrase makes that phrase more likely again. The response
+  distribution is also much less certain than story text, so the most likely token is often a common phrase. Sampling
+  brought repetition down to 0.02 on the same model, which points at the decoding as much as at the model.
+* How did you choose the SFT learning rate without using the test set? — On Dolly validation only: lr 2e-5, 1e-4 and 3e-4 gave
+  response NLL 5.34, 4.84 and 4.64 after one epoch.
+* Give one failure example and its likely cause. — Provisional: "Identify which instrument is string or woodwind: Tambura, Tubax"
+  → "Tuba is string, Tuba is woodwind." The format is right and the content is wrong. The model has learned the answer shape, but
+  a 5M-parameter model trained on children's stories and about 10,700 instruction examples has little factual knowledge, and "Tambura" is rare.

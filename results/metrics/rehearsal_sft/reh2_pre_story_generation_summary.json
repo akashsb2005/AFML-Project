@@ -1,0 +1,21 @@
+{
+  "n": 10,
+  "stopped_on_eos_rate": 0.0,
+  "mean_n_words": 64.9,
+  "mean_empty": 0.0,
+  "mean_distinct_1": 0.5003011877828054,
+  "mean_distinct_2": 0.7251936004501303,
+  "mean_repetition_4gram": 0.14171500630517025,
+  "mean_prompt_copy_3gram": 0.0,
+  "mean_new_tokens": 64.0,
+  "mean_latency_s": 1.039558933500666,
+  "label": "reh2_pre_story",
+  "ckpt": "pre/best_checkpoint.pt",
+  "prompts": "story_prompts.jsonl",
+  "decoding": {
+    "max_new_tokens": 64,
+    "temperature": 0.0,
+    "top_k": null,
+    "seed": 1234
+  }
+}

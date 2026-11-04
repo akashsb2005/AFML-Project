@@ -64,6 +64,39 @@ The pre-trained model has never seen instructions: Dolly responses are far less 
 children's-story text (see E4; the full count comes from the rubric). This is the baseline the SFT model must beat. 413 of
 737 test examples did not fit the 128-token context and were truncated by the DollySFTDataset rule.
 
+### Provisional — pre-trained vs fine-tuned, merged pipeline (validation split)
+
+Source: `results/metrics/rehearsal_sft/` (see its README). Standard attention, context 256, 3,000 pre-training steps
+(validation perplexity 14.56), Apple M1. Scored on Dolly **validation** so the test split stays untouched: response NLL on
+606 examples (133 skipped because the prompt does not fit), generations on 60 validation prompts. One seed, one run per setting.
+
+| Model | Response NLL ↓ | Response ppl ↓ |
+|---|---|---|
+| Pre-trained | 6.958 | 1,052 |
+| SFT, lr 2e-5, 1 epoch | 5.338 | 208 |
+| SFT, lr 1e-4, 1 epoch | 4.836 | 126 |
+| SFT, lr 3e-4, 1 epoch | 4.635 | 103 |
+| SFT, lr 3e-4, 4 epochs | 4.175 | 65 |
+
+| Model | Decoding | EOS rate | Repetition (4-gram) ↓ | Prompt copy (3-gram) | ROUGE-L vs reference |
+|---|---|---|---|---|---|
+| Pre-trained | greedy | 0.40 | 0.27 | 0.00 | 0.084 |
+| SFT, 1 epoch | greedy | 0.32 | 0.64 | 0.03 | 0.088 |
+| SFT, 4 epochs | greedy | 0.27 | 0.65 | 0.02 | 0.118 |
+| Pre-trained | sampled | 0.37 | 0.01 | 0.00 | 0.091 |
+| SFT, 1 epoch | sampled | 0.77 | 0.03 | 0.00 | 0.125 |
+| SFT, 4 epochs | sampled | 0.73 | 0.02 | 0.01 | 0.136 |
+
+Fine-tuning clearly lowers response loss, and validation loss was still falling at epoch 4 (per-epoch 4.61, 4.36, 4.23,
+4.14), so these settings did not reach overfitting. Lower loss did not make greedy outputs better overall: repetition
+more than doubles, because the model now loops on answer-style phrases rather than story text. Sampling removes nearly all of
+the looping and raises the EOS rate, but the sampled answers we read are often fluent and factually wrong. These numbers
+cover loops and termination only; whether answers improved needs the rubric.
+
+Example (`dolly_val_00202`, "Identify which instrument is string or woodwind: Tambura, Tubax"; reference "Tubax is woodwind,
+Tambura is string."): SFT 4 epochs, greedy: "Tuba is string, Tuba is woodwind." It has the right format and wrong content.
+More in `examples.json`.
+
 ## E3 — Standard vs efficient (linear) attention
 
 ### Efficiency (measured)

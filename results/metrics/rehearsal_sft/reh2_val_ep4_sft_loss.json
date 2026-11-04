@@ -1,0 +1,13 @@
+{
+  "mean_response_nll": 4.1747432764510535,
+  "response_perplexity": 65.0231445456626,
+  "response_tokens": 50148,
+  "examples": 739,
+  "truncated": 237,
+  "skipped_no_response_tokens": 133,
+  "example_builder": "DollySFTDataset rules",
+  "label": "reh2_val_ep4",
+  "ckpt": "sft_ep4/best.pt",
+  "data": "data/processed/dolly_validation.jsonl",
+  "excluded_overlapping_prompts": 0
+}

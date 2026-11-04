@@ -1,0 +1,22 @@
+{
+  "n": 60,
+  "stopped_on_eos_rate": 0.7666666666666667,
+  "mean_n_words": 46.56666666666667,
+  "mean_empty": 0.0,
+  "mean_distinct_1": 0.6633987394563594,
+  "mean_distinct_2": 0.8361535622391763,
+  "mean_repetition_4gram": 0.028413946049563356,
+  "mean_prompt_copy_3gram": 0.0002525252525252525,
+  "mean_rougeL_f1_vs_reference": 0.12475200068149152,
+  "mean_new_tokens": 68.01666666666667,
+  "mean_latency_s": 0.9181412548668959,
+  "label": "reh2_lr3e4_sampled",
+  "ckpt": "sft_0.0003/best.pt",
+  "prompts": "val_prompts.jsonl",
+  "decoding": {
+    "max_new_tokens": 128,
+    "temperature": 0.8,
+    "top_k": 50,
+    "seed": 1234
+  }
+}

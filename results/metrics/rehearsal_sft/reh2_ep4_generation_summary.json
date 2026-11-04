@@ -1,0 +1,22 @@
+{
+  "n": 60,
+  "stopped_on_eos_rate": 0.26666666666666666,
+  "mean_n_words": 78.31666666666666,
+  "mean_empty": 0.0,
+  "mean_distinct_1": 0.24362552160974402,
+  "mean_distinct_2": 0.27454072377973177,
+  "mean_repetition_4gram": 0.6456027194757179,
+  "mean_prompt_copy_3gram": 0.019385383864003517,
+  "mean_rougeL_f1_vs_reference": 0.11770854476849246,
+  "mean_new_tokens": 103.26666666666667,
+  "mean_latency_s": 1.3325042353000147,
+  "label": "reh2_ep4",
+  "ckpt": "sft_ep4/best.pt",
+  "prompts": "val_prompts.jsonl",
+  "decoding": {
+    "max_new_tokens": 128,
+    "temperature": 0.0,
+    "top_k": null,
+    "seed": 1234
+  }
+}
