@@ -350,7 +350,7 @@ def context_length_of(ckpt: dict, override: int | None = None) -> int:
 def _load(args):
     device = model_api.pick_device(args.device)
     model, ckpt = model_api.load_checkpoint(args.ckpt, device, args.builder)
-    tok = model_api.load_tokenizer(args.tokenizer or ckpt.get("tokenizer_path") or model_api.DEFAULT_TOKENIZER)
+    tok = model_api.load_tokenizer(model_api.resolve_tokenizer_path(args.tokenizer, ckpt.get("tokenizer_path")))
     return device, model, ckpt, tok
 
 

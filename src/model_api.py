@@ -147,6 +147,18 @@ class TokenizerWrapper:
 SPECIAL_NAMES = {"eos": ("[EOS]", "<|endoftext|>"), "pad": ("[PAD]", "<|pad|>"), "bos": ("[BOS]", "<|bos|>")}
 
 
+def resolve_tokenizer_path(explicit: str | None, saved: str | None) -> str:
+    """--tokenizer wins. A checkpoint's saved path may come from another machine (Colab, Drive), so a path that
+    does not exist here falls back to the tokenizer tracked in the repo."""
+    if explicit:
+        return explicit
+    if saved and Path(saved).exists():
+        return saved
+    if saved:
+        print(f"warning: checkpoint tokenizer_path {saved} not found, using {DEFAULT_TOKENIZER}")
+    return DEFAULT_TOKENIZER
+
+
 def load_tokenizer(path: str) -> TokenizerWrapper:
     """path: Member 2's artifacts/tokenizer/tokenizer.json (Hugging Face `tokenizers` format)."""
     if path.endswith(".json"):

@@ -60,8 +60,8 @@ so the 60 prompts were selected with a 64-token prompt budget (`eval_prompt_ids_
 | Pre-trained (standard) | 7.077 | 1184 | 0.50 | 0.00 | 0.38 | 0.086 |
 
 The pre-trained model has never seen instructions: Dolly responses are far less likely to it than stories
-(response perplexity 1184 vs story perplexity 15.4), and it answers every
-instruction with children's-story text (see E4). This is the baseline the SFT model must beat. 413 of
+(response perplexity 1184 vs story perplexity 15.4), and all 6 outputs inspected so far are
+children's-story text (see E4; the full count comes from the rubric). This is the baseline the SFT model must beat. 413 of
 737 test examples did not fit the 128-token context and were truncated by the DollySFTDataset rule.
 
 ## E3 — Standard vs efficient (linear) attention
