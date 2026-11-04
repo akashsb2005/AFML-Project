@@ -2,7 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from attention import CausalSelfAttention
+try:  # Support both ``src.model`` imports and ``python src/pretrain.py``.
+    from .attention import CausalSelfAttention
+except ImportError:
+    from attention import CausalSelfAttention
 
 
 class FeedForward(nn.Module):
@@ -118,7 +121,7 @@ class SmallLanguageModel(nn.Module):
         elif isinstance(module, nn.Embedding):
             nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, input_ids, targets=None):
+    def forward(self, input_ids, targets=None, attention_mask=None):
         batch_size, seq_len = input_ids.shape
 
         if seq_len > self.max_seq_len:
@@ -126,6 +129,9 @@ class SmallLanguageModel(nn.Module):
                 f"Sequence length {seq_len} exceeds "
                 f"maximum {self.max_seq_len}"
             )
+
+        if attention_mask is not None and attention_mask.shape != input_ids.shape:
+            raise ValueError("attention_mask must match input_ids shape")
 
         positions = torch.arange(
             seq_len, device=input_ids.device
@@ -143,12 +149,41 @@ class SmallLanguageModel(nn.Module):
         x = self.final_norm(x)
         logits = self.lm_head(x)
 
-        loss = None
-
         if targets is not None:
             loss = F.cross_entropy(
                 logits.reshape(-1, self.vocab_size),
-                targets.reshape(-1)
+                targets.reshape(-1),
+                ignore_index=-100,
             )
+            return logits, loss
 
-        return logits, loss
+        # Right padding cannot affect earlier positions under causal
+        # attention. Accept and validate the dataset mask for API consistency.
+        return logits
+
+
+def build_model(config):
+    """Build the project model from flat or nested project config values."""
+    config = dict(config)
+    if "model" in config and isinstance(config["model"], dict):
+        config = dict(config["model"])
+    attention = config.get("attention", "standard")
+    vocab_size = config.get("vocab_size", 8000)
+    embedding_dim = config.get("embedding_dim", config.get("d_model", 256))
+    num_heads = config.get("num_heads", config.get("n_head", 4))
+    num_layers = config.get("num_layers", config.get("n_layer", 4))
+    max_seq_len = config.get("max_seq_len", config.get("context_length", config.get("block_size", 256)))
+    dropout = config.get("dropout", 0.1)
+    if attention == "standard":
+        model_cls = SmallLanguageModel
+    elif attention == "linear":
+        try:
+            from .efficient_model import EfficientSmallLanguageModel
+        except ImportError:
+            from efficient_model import EfficientSmallLanguageModel
+        model_cls = EfficientSmallLanguageModel
+    else:
+        raise ValueError(f"Unsupported attention variant: {attention!r}")
+    return model_cls(vocab_size=vocab_size, embedding_dim=embedding_dim,
+                     num_heads=num_heads, num_layers=num_layers,
+                     max_seq_len=max_seq_len, dropout=dropout)

@@ -31,7 +31,7 @@ def evaluate(model, loader, device, max_batches=30):
             labels = batch["labels"].to(device)
             mask = batch["attention_mask"].to(device)
 
-            logits, _ = model(ids, attention_mask=mask)
+            logits = model(ids, attention_mask=mask)
 
             losses = torch.nn.functional.cross_entropy(
                 logits.reshape(-1, model.vocab_size),
@@ -54,11 +54,24 @@ def evaluate(model, loader, device, max_batches=30):
 
 def save_checkpoint(path, step, model, optimizer, config,
                     train_loss, val_loss):
+    model_config = {
+        "vocab_size": model.vocab_size,
+        "embedding_dim": model.embedding_dim,
+        "num_heads": model.num_heads,
+        "num_layers": model.num_layers,
+        "context_length": model.max_seq_len,
+        "dropout": 0.1,
+        "attention": "standard",
+    }
     state = {
         "step": step,
         "model_state_dict": model.state_dict(),
+        "model_state": model.state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
-        "config": config,
+        "config": model_config,
+        "training_config": config,
+        "tokenizer_path": "artifacts/tokenizer/tokenizer.json",
+        "stage": "pretrain",
         "train_loss": train_loss,
         "validation_loss": val_loss,
         "python_rng_state": random.getstate(),

@@ -131,12 +131,16 @@ def stories_nll(model, tok, texts, block_size: int, batch_size: int = 32,
 def build_sft_example(example: dict, tok, max_length: int | None = None) -> tuple[list[int], list[int], str]:
     """(input_ids, labels, source) built exactly like Member 2's DollySFTDataset: prompt and response encoded
     separately without special tokens, response + EOS supervised, prompt labels -100, and the same
-    truncation rule (keep the response, cut the prompt from the left). No padding."""
+    truncation rule (preserve the prompt, truncate response tail, skip unfit prompts). No padding."""
     prompt = model_api.prompt_text(example)
     p_ids, r_ids = tok.encode(prompt), tok.encode(example["response"])
+    if not p_ids or not r_ids:
+        return [], [], "empty_prompt_or_response"
     if max_length is not None and len(p_ids) + len(r_ids) + 1 > max_length:
-        r_ids = r_ids[:max_length - 2]
-        p_ids = p_ids[-(max_length - len(r_ids) - 1):]
+        response_budget = max_length - len(p_ids) - 1
+        if response_budget <= 0:
+            return [], [], "prompt_too_long_skipped"
+        r_ids = r_ids[:response_budget]
     ids = p_ids + r_ids + [tok.eos_id]
     return ids, [-100] * len(p_ids) + r_ids + [tok.eos_id], "DollySFTDataset rules"
 
@@ -151,6 +155,9 @@ def response_nll(model, examples: list[dict], tok, context_length: int,
         n_full = len(build_sft_example(ex, tok)[0])
         ids, labels, source = build_sft_example(ex, tok, max_length=context_length)
         truncated += n_full > len(ids)
+        if not ids:
+            skipped += 1
+            continue
         x = torch.tensor([ids[:-1]], device=device)
         y = torch.tensor([labels[1:]], device=device)
         if int((y != -100).sum()) == 0:
