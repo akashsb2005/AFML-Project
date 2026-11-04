@@ -2,7 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from efficient_attention import LinearCausalSelfAttention
+try:
+    from .efficient_attention import LinearCausalSelfAttention
+except ImportError:
+    from efficient_attention import LinearCausalSelfAttention
 
 
 class EfficientTransformerBlock(nn.Module):
@@ -118,13 +121,12 @@ class EfficientSmallLanguageModel(nn.Module):
 
         logits = self.lm_head(self.final_norm(x))
 
-        loss = None
-
         if targets is not None:
             loss = F.cross_entropy(
                 logits.reshape(-1, self.vocab_size),
                 targets.reshape(-1),
                 ignore_index=-100
             )
+            return logits, loss
 
-        return logits, loss
+        return logits
