@@ -24,10 +24,12 @@ the slide.
 ## Live demo (≈ 5 min, run from Colab with checkpoints on Drive)
 
 1. Load the pre-trained checkpoint and generate a story from "Once upon a time" (greedy):
-   `python src/evaluate.py generate --ckpt <pre.pt> --label demo_pre --prompts results/metrics/story_prompts.jsonl --raw`
+   `python src/evaluate.py generate --ckpt <pre.pt> --label demo_pre --prompts demo/story_prompts.jsonl --raw`
 2. Same instruction to the pre-trained and the fine-tuned model:
-   `python src/evaluate.py generate --ckpt <pre.pt> --label demo_pre_inst --prompts demo/inst_prompts.jsonl`
-   `python src/evaluate.py generate --ckpt <sft.pt> --label demo_sft_inst --prompts demo/inst_prompts.jsonl`
+   `python src/evaluate.py generate --ckpt <pre.pt> --label demo_pre_inst --prompts demo/inst_prompts.jsonl --temperature 0.8 --top-k 50`
+   `python src/evaluate.py generate --ckpt <sft.pt> --label demo_sft_inst --prompts demo/inst_prompts.jsonl --temperature 0.8 --top-k 50`
+   Use sampled decoding here because greedy output visibly loops. The report keeps greedy as the primary result, as in the
+   protocol, and shows sampled alongside it. Say this out loud in the demo.
 3. Show the benchmark plot and run one short benchmark (`--steps 5`) live to show how the numbers are measured.
 
 **Backup:** if Colab or Drive is unavailable, show the saved `*_generations.jsonl` and figures from the
