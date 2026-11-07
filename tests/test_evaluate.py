@@ -92,6 +92,15 @@ def test_generation_and_rubric_roundtrip(tmp_path):
     assert s["sft"]["mean_total_out_of_8"] == 8 and s["pre"]["mean_total_out_of_8"] == 4
 
 
+def test_tokenizer_path_from_another_machine_falls_back(tmp_path):
+    real = tmp_path / "tokenizer.json"
+    real.write_text("{}")
+    assert model_api.resolve_tokenizer_path("given.json", str(real)) == "given.json"
+    assert model_api.resolve_tokenizer_path(None, str(real)) == str(real)
+    assert model_api.resolve_tokenizer_path(None, "/content/AFML-Project/tokenizer.json") == model_api.DEFAULT_TOKENIZER
+    assert model_api.resolve_tokenizer_path(None, None) == model_api.DEFAULT_TOKENIZER
+
+
 def test_checkpoint_roundtrip_and_cli(tmp_path, monkeypatch):
     tok = ByteTokenizer()
     cfg = dict(vocab_size=tok.vocab_size, n_layer=1, n_head=2, d_model=16, context_length=32, attention="standard")

@@ -70,6 +70,30 @@ one rater), hardware and noise; don't claim "improves" without a measured, large
 
 * What is your final validation perplexity, and what does it mean compared with 8000? — _TBD_
 * Did SFT reduce response NLL, and by how much? Did rubric scores agree? — _TBD_
-* At which sequence length (if any) is linear attention faster / lighter than softmax on our GPU? — _TBD_
-* What did linear attention cost in perplexity? — _TBD_
-* Give one failure example and its likely cause. — _TBD_
+* At which sequence length (if any) is linear attention faster / lighter than softmax on our GPU? — On the T4,
+  at **none of the lengths we measured (128–2048)**. It trains at 0.35–0.40× the speed and uses 2.2–2.5× the
+  memory. But its forward time grows ≈ 2.0× per doubling of T against 2.0 → 2.95× for softmax, so the gap shrinks
+  from 2.52× (T = 128) to 1.08× (T = 2048); a crossover beyond 2048 is an extrapolation, not a measurement. Reason:
+  the causal implementation stores a 64 × 64 state per token and head (4,096 numbers) vs T scores for softmax.
+* Why are both models the same size? — Linear attention changes how Q, K, V are combined, not the number of
+  projections; both have 5,273,088 parameters (tied input/output embeddings).
+* How do you know the speed difference is real and not noise? — 4 identical runs: standard 68,325 ± 903 tokens/s,
+  linear 27,094 ± 226 — the difference is ~40 standard deviations.
+* What did linear attention cost in perplexity? — Provisional rehearsal (3,000 identical steps): validation
+  perplexity 16.81 vs 15.42 for softmax (9 % higher), and 2.8× the training time. Both were still improving, so the
+  final gap needs the official longer runs.
+* Why is your validation loss lower than the training loss early on? — The training loss is averaged over the
+  last 250 steps (the model was worse at the start of that window) and computed with dropout on; validation
+  is measured at the end of the window with dropout off.
+* Why does the pre-trained model answer "What is TESSA?" with a story? — It has only ever seen children's
+  stories; instruction following is exactly what SFT has to add.
+* Why did repetition get worse after fine-tuning when the loss improved? — Provisional rehearsal: response NLL fell
+  from 6.96 to 4.18 but greedy 4-gram repetition rose from 0.27 to 0.65. NLL scores each next token given the true previous tokens;
+  greedy decoding feeds the model its own output, so one repeated phrase makes that phrase more likely again. The response
+  distribution is also much less certain than story text, so the most likely token is often a common phrase. Sampling
+  brought repetition down to 0.02 on the same model, which points at the decoding as much as at the model.
+* How did you choose the SFT learning rate without using the test set? — On Dolly validation only: lr 2e-5, 1e-4 and 3e-4 gave
+  response NLL 5.34, 4.84 and 4.64 after one epoch.
+* Give one failure example and its likely cause. — Provisional: "Identify which instrument is string or woodwind: Tambura, Tubax"
+  → "Tuba is string, Tuba is woodwind." The format is right and the content is wrong. The model has learned the answer shape, but
+  a 5M-parameter model trained on children's stories and about 10,700 instruction examples has little factual knowledge, and "Tambura" is rare.

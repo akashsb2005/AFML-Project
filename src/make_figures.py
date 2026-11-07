@@ -48,12 +48,13 @@ def read_train_log(path):
     with open(path) as fh:
         for r in csv.DictReader(fh):
             x = float(r.get("tokens_seen") or r["step"])
+            val_value = r.get("val_loss") or r.get("validation_loss")   # Member 1 logs "validation_loss"
             if r.get("train_loss"):
                 steps.append(x)
                 train.append(float(r["train_loss"]))
-            if r.get("val_loss"):
+            if val_value:
                 val_x.append(x)
-                val.append(float(r["val_loss"]))
+                val.append(float(val_value))
     return steps, train, val_x, val
 
 
@@ -87,7 +88,7 @@ def plot_benchmark(bench_json, out_prefix):
     for metric, ylabel, fname in [("forward_ms_median", "forward latency (ms, median)", "forward_latency"),
                                   ("forward_peak_mem_mb", "peak GPU memory (MB)", "forward_memory")]:
         fig, ax = plt.subplots(figsize=(7, 4.2))
-        plotted = False
+        plotted, ends = False, []
         for i, n in enumerate(names):
             pts = sorted((int(T), f[metric]) for T, f in variants[n]["forward"].items() if f.get(metric) is not None)
             if not pts:
@@ -95,9 +96,14 @@ def plot_benchmark(bench_json, out_prefix):
             xs, ys = zip(*pts)
             label = variants[n].get("attention") or n
             ax.plot(xs, ys, color=SERIES[i], linewidth=2, marker="o", markersize=5, label=label)
-            ax.annotate(label, (xs[-1], ys[-1]), xytext=(6, 0), textcoords="offset points", va="center",
-                        fontsize=9, color=INK)
+            ends.append((ys[-1], xs[-1], label))
             plotted = True
+        # direct end labels; pull apart labels whose end points nearly coincide (log axis -> compare ratios)
+        ends.sort()
+        for j, (y, x, label) in enumerate(ends):
+            close = len(ends) > 1 and any(abs(y / o[0] - 1) < 0.25 for k, o in enumerate(ends) if k != j)
+            dy = (-7 if j == 0 else 7) if close else 0
+            ax.annotate(label, (x, y), xytext=(6, dy), textcoords="offset points", va="center", fontsize=9, color=INK)
         if not plotted:
             plt.close(fig)
             continue
@@ -105,7 +111,8 @@ def plot_benchmark(bench_json, out_prefix):
         all_T = sorted({int(T) for n in names for T in variants[n]["forward"]})
         ax.set_xticks(all_T, [str(T) for T in all_T])
         ax.set_yscale("log")
-        _style(ax, f"{ylabel.split(' (')[0].capitalize()} vs sequence length — batch {res['batch_size']}, {hw}",
+        title = ylabel.split(" (")[0]
+        _style(ax, f"{title[0].upper() + title[1:]} vs sequence length — batch {res['batch_size']}, {hw}",
                "sequence length (tokens, log scale)", ylabel + " — log scale")
         ax.legend(frameon=False, fontsize=9)
         _save(fig, f"{out_prefix}_{fname}.png")

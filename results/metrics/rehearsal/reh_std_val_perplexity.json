@@ -1,0 +1,11 @@
+{
+  "mean_nll": 2.7358847975433105,
+  "perplexity": 15.423383972731308,
+  "tokens_scored": 104882,
+  "stories": 500,
+  "blocks": 1099,
+  "block_size": 128,
+  "label": "reh_std_val",
+  "data_file": "data/processed/tiny_stories_validation.jsonl",
+  "hardware": "Tesla T4"
+}
