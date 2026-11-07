@@ -2,7 +2,7 @@
 
 > Every number in this file is copied from a file in `results/metrics/` or `experiments/experiment_log.csv`
 > (source given next to each table). Cells stay **TBD** until the corresponding run exists — nothing is
-> estimated. Hardware for every table: _TBD (GPU, PyTorch version)_.
+> estimated. Hardware is stated with each table.
 
 ## E1 — Does pre-training work?
 
@@ -18,6 +18,25 @@ checkpoints show?_
 
 Sample generations (raw story prompts, greedy): _TBD, copied from `<run>_generations.jsonl`._
 
+
+### Provisional — Member 3 pipeline rehearsal (not the final runs)
+
+Source: `results/metrics/rehearsal/` (see its README for exact settings). Member 1's models with the two
+review fixes, Member 2's data, 3,000 steps, batch 32, block 128, lr 3e-4, seed 42, Tesla T4. Figure:
+`results/figures/rehearsal_pretrain_loss.png`.
+
+| Model | Params | Steps | Final train loss | Val NLL (full val, 104,882 tokens) | Val perplexity | Training time |
+|---|---|---|---|---|---|---|
+| Uniform baseline | — | — | — | 8.987 | 8,000 | — |
+| Standard attention | 5,273,088 | 3,000 | 2.753 | 2.736 | 15.42 | 163 s |
+
+Pre-training clearly works: perplexity falls from 8,000 (uniform) to 15.4, and validation loss
+is still falling at step 3,000 (no sign of overfitting yet; validation sits slightly below the training average
+because training loss is averaged over the interval with dropout on). Story continuations are fluent
+TinyStories-style text (`examples.json`), but greedy decoding loops on some prompts (4-gram repetition
+0.10 on average over 10 openings, up to 0.70 on one) and none of the 64-token
+continuations reached EOS.
+
 ## E2 — Does instruction fine-tuning help?
 
 Source: `<run>_sft_loss.json`, `<run>_generation_summary.json`, `rubric_summary.json`. Same 60 prompts and
@@ -30,36 +49,148 @@ the same decoding settings for both rows.
 
 Before/after examples: _TBD (3 prompts, both outputs verbatim)._
 
+
+### Provisional — pre-trained model only (no SFT checkpoint exists yet)
+
+Source: `results/metrics/rehearsal/reh_std_sft_loss.json`, `reh_std_inst_generation_summary.json`. Context 128,
+so the 60 prompts were selected with a 64-token prompt budget (`eval_prompt_ids_ctx128.json`).
+
+| Model | Response NLL ↓ | Response ppl ↓ | EOS rate | Prompt copy (3-gram) | Repetition (4-gram) | ROUGE-L vs reference |
+|---|---|---|---|---|---|---|
+| Pre-trained (standard) | 7.077 | 1184 | 0.50 | 0.00 | 0.38 | 0.086 |
+
+The pre-trained model has never seen instructions: Dolly responses are far less likely to it than stories
+(response perplexity 1184 vs story perplexity 15.4), and all 6 outputs inspected so far are
+children's-story text (see E4; the full count comes from the rubric). This is the baseline the SFT model must beat. 413 of
+737 test examples did not fit the 128-token context and were truncated by the DollySFTDataset rule.
+
+### Provisional — pre-trained vs fine-tuned, merged pipeline (validation split)
+
+Source: `results/metrics/rehearsal_sft/` (see its README). Standard attention, context 256, 3,000 pre-training steps
+(validation perplexity 14.56), Apple M1. Scored on Dolly **validation** so the test split stays untouched: response NLL on
+606 examples (133 skipped because the prompt does not fit), generations on 60 validation prompts. One seed, one run per setting.
+
+| Model | Response NLL ↓ | Response ppl ↓ |
+|---|---|---|
+| Pre-trained | 6.958 | 1,052 |
+| SFT, lr 2e-5, 1 epoch | 5.338 | 208 |
+| SFT, lr 1e-4, 1 epoch | 4.836 | 126 |
+| SFT, lr 3e-4, 1 epoch | 4.635 | 103 |
+| SFT, lr 3e-4, 4 epochs | 4.175 | 65 |
+
+| Model | Decoding | EOS rate | Repetition (4-gram) ↓ | Prompt copy (3-gram) | ROUGE-L vs reference |
+|---|---|---|---|---|---|
+| Pre-trained | greedy | 0.40 | 0.27 | 0.00 | 0.084 |
+| SFT, 1 epoch | greedy | 0.32 | 0.64 | 0.03 | 0.088 |
+| SFT, 4 epochs | greedy | 0.27 | 0.65 | 0.02 | 0.118 |
+| Pre-trained | sampled | 0.37 | 0.01 | 0.00 | 0.091 |
+| SFT, 1 epoch | sampled | 0.77 | 0.03 | 0.00 | 0.125 |
+| SFT, 4 epochs | sampled | 0.73 | 0.02 | 0.01 | 0.136 |
+
+Fine-tuning clearly lowers response loss, and validation loss was still falling at epoch 4 (per-epoch 4.61, 4.36, 4.23,
+4.14), so these settings did not reach overfitting. Lower loss did not make greedy outputs better overall: repetition
+more than doubles, because the model now loops on answer-style phrases rather than story text. Sampling removes nearly all of
+the looping and raises the EOS rate, but the sampled answers we read are often fluent and factually wrong. These numbers
+cover loops and termination only; whether answers improved needs the rubric.
+
+Example (`dolly_val_00202`, "Identify which instrument is string or woodwind: Tambura, Tubax"; reference "Tubax is woodwind,
+Tambura is string."): SFT 4 epochs, greedy: "Tuba is string, Tuba is woodwind." It has the right format and wrong content.
+More in `examples.json`.
+
 ## E3 — Standard vs efficient (linear) attention
 
-Quality source: `<run>_perplexity.json`. Efficiency source: `<label>_benchmark.json`
-(figures `bench_forward_latency.png`, `bench_forward_memory.png`, `bench_train_throughput.png`,
-`bench_gen_latency.png`).
+### Efficiency (measured)
 
-| Variant | Params | Val ppl | Test ppl | Training time | Train tokens/s | Train peak mem (MB) | Gen ms/token |
+Measured with `src/benchmark.py` on a Colab **Tesla T4** (15 GB, PyTorch 2.11.0, CUDA 13.0), both variants
+built from the same configuration (4 layers, 4 heads, d_model 256, vocab 8000, tied embeddings, dropout 0.1)
+with random weights, identical batch, sequence length, seed, warm-up (3) and repeat counts; median of
+≥ 20 timed repeats. Both variants have **5,273,088 parameters** (linear attention adds none). Tables are
+generated by `src/summarize_benchmarks.py`; figures `results/figures/bench_t4_*.png`.
+
+### Run-to-run variation (batch 8, T = 128, 4 identical runs)
+
+| Attention | train tokens/s (mean ± sd) | min–max | gen ms/token (mean) |
+|---|---|---|---|
+| standard | 68,325 ± 903 | 67,090–69,143 | 3.43 |
+| linear | 27,094 ± 226 | 26,879–27,406 | 4.05 |
+
+### Training step (forward + backward + AdamW)
+
+| Batch | T | Standard tokens/s | Linear tokens/s | Linear / standard | Standard peak MB | Linear peak MB |
+|---|---|---|---|---|---|---|
+| 8 | 128 | 69,143 | 27,406 | 0.40× | 293 | 641 |
+| 8 | 256 | 73,804 | 28,431 | 0.39× | 537 | 1,195 |
+| 32 | 128 | 84,811 | 29,325 | 0.35× | 928 | 2,301 |
+| 32 | 256 | 79,198 | 29,471 | 0.37× | 1,913 | 4,513 |
+
+### Inference forward pass vs sequence length (batch 8, context raised to 2048 for both)
+
+| T | Standard ms | Linear ms | Linear / standard | Standard ×/doubling | Linear ×/doubling | Standard peak MB | Linear peak MB |
 |---|---|---|---|---|---|---|---|
-| Standard (softmax) | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| Linear (Katharopoulos et al.) | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| 128 | 4.4 | 11.1 | 2.52× | — | — | 95 | 258 |
+| 256 | 8.9 | 21.7 | 2.43× | 2.03 | 1.96 | 128 | 455 |
+| 512 | 21.3 | 43.7 | 2.05× | 2.39 | 2.01 | 196 | 849 |
+| 1024 | 55.1 | 87.1 | 1.58× | 2.59 | 1.99 | 383 | 1,637 |
+| 2048 | 162.5 | 175.7 | 1.08× | 2.95 | 2.02 | 1,219 | 3,213 |
 
-Sequence-length sweep (forward, batch 16): _TBD table from `<label>_benchmark_forward.csv`._
+**Interpretation.**
+* On this GPU, linear attention was **slower and used more memory at every length we measured
+  (128–2048)**: 0.35–0.40× the standard model's training throughput and 2.2–2.5× its peak training memory.
+  These gaps are far larger than run-to-run variation (≈ 1.3 % / 0.8 % standard deviation over 4 identical runs).
+* The scaling behaves as the theory predicts. Each doubling of T multiplies standard attention's forward time by
+  2.03 → 2.95 (approaching the 4× of O(T²)), while linear attention stays at ≈ 2.0× (O(T)). The latency gap therefore
+  shrinks from 2.52× at T = 128 to 1.08× at T = 2048; if the trend continues, linear attention would become faster
+  somewhere beyond 2048 tokens. This is an extrapolation, not measured.
+* Plausible cause of the constant-factor overhead: the causal implementation materialises the running state
+  φ(k)vᵀ — a 64 × 64 matrix (4,096 numbers) per token and head — whereas softmax attention stores T scores per
+  token and head. Below T ≈ 4,096 the linear form therefore moves *more* data, and the extra einsum/cumsum
+  kernels are memory-bound. A chunked or fused kernel would reduce this constant.
+* Generation (no KV cache in either variant, full re-encoding per token, prompt 32 + 64 new tokens):
+  3.43 vs 4.05 ms/token. The recurrent form of linear attention would allow constant cost per token, but it
+  is not implemented here.
+* The context-2048 sweep run measured lower training throughput for the standard model (52,259 tokens/s),
+  probably because of its larger position table (2,048 rows) and only 10 timed steps. It is used for the
+  latency/memory sweep only, not for throughput claims.
 
-Unavoidable differences between the two runs: _TBD (or "none")._
+### Quality
 
-Interpretation: _TBD — where does linear attention become faster/leaner (if at all)? what does it cost in
-perplexity? is the difference larger than run-to-run noise?_
+| Variant | Params | Val ppl | Test ppl | Training time (same steps) |
+|---|---|---|---|---|
+| Standard (softmax) | 5,273,088 | TBD | TBD | TBD |
+| Linear (Katharopoulos et al.) | 5,273,088 | TBD | TBD | TBD |
+
+*Provisional rehearsal (same data, 3,000 identical steps, T4; `results/metrics/rehearsal/`):*
+
+| Variant | Val NLL | Val perplexity | Training time (3,000 steps) | Story 4-gram repetition |
+|---|---|---|---|---|
+| Standard | 2.736 | 15.42 | 163 s | 0.100 |
+| Linear | 2.822 | 16.81 | 456 s | 0.077 |
+
+At an equal number of steps, linear attention reached a 9% higher validation perplexity and
+took 2.8× longer (consistent with the 0.35–0.40× throughput measured above). Both curves were
+still falling, so the gap at convergence is unknown; one seed only.
+
+Pending the matched training runs from Member 1 (after the fixes in the PR #2 review). Unavoidable differences
+between the two runs: linear attention has no attention-weight dropout (not defined for the linear form).
 
 ## E4 — Failure analysis
 
-Source: `rubric_sheet.csv` notes column.
+Source: `rubric_sheet.csv` notes column (final); provisional examples from `results/metrics/rehearsal/examples.json`.
 
 | Failure tag | Pre-trained | Fine-tuned | Example (prompt id) | Plausible cause |
 |---|---|---|---|---|
-| echo | TBD | TBD | | |
-| loop | TBD | TBD | | |
-| story-mode | TBD | TBD | | |
-| off-topic | TBD | TBD | | |
-| truncated | TBD | TBD | | |
-| factual-error | TBD | TBD | | |
+| story-mode | all 6 inspected rehearsal outputs (of 60) are story text; full count TBD (rubric) | TBD | dolly_test_00104 "What is TESSA?" → "I'm sorry, I didn't mean to hurt you… The moral of the story is…" | pre-training data contains only children's stories; no instruction data yet |
+| loop | mean 4-gram repetition 0.38 on instructions | TBD | dolly_test_00607 (corporate rebrand) → "I'm glad you're welcome, …" ×10 (repetition 0.74) | greedy decoding of a small model; no repetition penalty |
+| loop (stories) | 0.70 on one opening | TBD | val_story_03 "Lily and Ben are friends. They" → "It is a big slide." ×8 | same |
+| echo | 0.00 prompt copy | TBD | — | — |
+| off-topic | TBD (rubric) | TBD | | |
+| truncated | 413/737 test examples exceed 128 tokens | TBD | | context length 128 |
+| factual-error | TBD (rubric) | TBD | | |
+
+Also observed: the tokenizer reproduces mis-encoded quotation marks present in the training text
+(`â€œ` instead of “), and several TinyStories validation stories share the same first six words
+("Once upon a time, there was"), so greedy decoding produces identical continuations for them. The final
+story-prompt set should use distinct openings.
 
 ## Limitations
 

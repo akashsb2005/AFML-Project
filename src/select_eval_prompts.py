@@ -59,6 +59,21 @@ def select(test_rows, n, seed, exclude_rows=(), fits=None):
     return chosen, leaked
 
 
+def story_openings(rows: list[dict], n: int, n_words: int = 8, distinct_words: int = 5) -> list[dict]:
+    """Raw story probes: the first words of validation stories, with distinct openings. Greedy decoding would
+    give identical continuations for stories that share one ("Once upon a time, there was")."""
+    seen, out = set(), []
+    for i, r in enumerate(rows):
+        words = r["text"].split()
+        key = " ".join(words[:distinct_words]).lower()
+        if len(words) >= n_words and key not in seen:
+            seen.add(key)
+            out.append({"id": f"val_story_{i:05d}", "prompt": " ".join(words[:n_words])})
+        if len(out) == n:
+            break
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--test", required=True)
@@ -70,6 +85,9 @@ def main(argv=None):
     ap.add_argument("--max-new-tokens", type=int, default=128)
     ap.add_argument("--out", default="results/metrics/eval_prompts.jsonl")
     ap.add_argument("--strict", action="store_true", help="abort instead of skipping leaked prompts")
+    ap.add_argument("--stories", default=None, help="tiny_stories_validation.jsonl: also write the raw story probes")
+    ap.add_argument("--n-stories", type=int, default=10)
+    ap.add_argument("--stories-out", default="results/metrics/story_prompts.jsonl")
     a = ap.parse_args(argv)
 
     exclude = [r for p in a.exclude for r in read_jsonl(p)]
@@ -88,6 +106,8 @@ def main(argv=None):
         print(f"WARNING: {len(leaked)} test prompts also occur in the excluded files — they were left out "
               f"of the selection: {[r['id'] for r in leaked]}", file=sys.stderr)
     write_jsonl(a.out, chosen)
+    if a.stories:
+        write_jsonl(a.stories_out, story_openings(read_jsonl(a.stories), a.n_stories))
     counts = defaultdict(int)
     for r in chosen:
         counts[r.get("category", "unknown")] += 1

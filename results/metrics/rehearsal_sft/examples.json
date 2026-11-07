@@ -1,0 +1,92 @@
+[
+ {
+  "id": "dolly_val_00254",
+  "category": "brainstorming",
+  "instruction": "Which spices should every cook have on hand?",
+  "reference": "Salt and Pepper are essential spices. Cumin, Chilli, Turmeric, Garlic and Cinnamon are also popular.",
+  "pretrained_greedy": "a lot of fun, but it was not a lot of fun. One day, they decided to make a new game. They put the pieces of pieces of pieces of pieces of pieces and put them in the pieces. They made a big pieces of pieces of pieces of pieces and pieces of pieces. They were very happy. They decided to make a new pieces of pieces of pieces of pieces of pieces. They made a big pieces of pieces of pieces of pieces of pieces of pieces and pieces. They made a lot of pieces of pieces of pieces of pieces of pieces of pieces. They were very happy. They learned that it's important to",
+  "sft_1epoch_greedy": "The following are typically a table, and a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table, a table,",
+  "sft_4epochs_greedy": "First, you can use a domesticality, you can use a domesticality, you can use a domesticality, such as a domesticality, a domesticality, a domesticality, a domesticality, a domesticality, a domesticality, a domesticality, a domesticated, a domesticated, a domesticated, a domesticated, a domesticated",
+  "sft_4epochs_sampled": "Sil"
+ },
+ {
+  "id": "dolly_val_00178",
+  "category": "summarization",
+  "instruction": "What is fossil fighter gameplay like?",
+  "reference": "Fossil fighters is a third-person, single-player game on the Nintendo DS focused around finding, cleaning, and reviving dinosaur fossils on Vivosaur Island. Once dinosaurs (called vivosaurs in the game) are revived, they can be used to battle other fossil fighters. The goal of the game is to reach the highest fossil fighter license level, find better and better fossils, defeat the BB Bandits who are determined to cause trouble around the island, and uncover various mysteries surrounding the island.",
+  "pretrained_greedy": "\"I'm a lot of fun, but I don't have to be selfish. I don't want to share with you. I don't want to share your friends with you. I don't want to share with me. I don't want to share your friends. I don't want to share with me. I don't want to share your friends. I don't want to share with me. I want to share your friends. I want to share with me. I want to share with me. I want to share with me. I want to share your friends. I want to share with me. I like you,",
+  "sft_1epoch_greedy": "The game is a game that is a game that is a game.",
+  "sft_4epochs_greedy": "Poconnocior Sew (Socior Sea) is a game game that is a game game that is a game that is a game played with a game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game game",
+  "sft_4epochs_sampled": "The competition professional committed the New versional Social team formunity of Work Foundational FIFC, and Tegium FCS, Min, Neh Jerman, Warague, Ko Roosevelt, Tiko, and Children are the Neal Sostem."
+ },
+ {
+  "id": "dolly_val_00193",
+  "category": "open_qa",
+  "instruction": "Who are some of the most influential women's hockey players",
+  "reference": "Hayley Wickenheiser, Cassie Campbell, Cammi Granato, Angela Ruggiero",
+  "pretrained_greedy": "a lot of fun, but he also also also also also also also also also also also also also also also also also also also also also also also learned a lesson.",
+  "sft_1epoch_greedy": "1. The teams of the teams of the teams. The teams are the teams of the teams. The teams are the teams of the teams. The teams are the teams. The teams are the teams. The teams are the teams. The teams are the teams. The teams are the teams. The teams are the teams. The teams are the teams. The teams teams are the teams teams. The teams are the teams teams. The teams are the teams. The teams team",
+  "sft_4epochs_greedy": "Some of the most popular basketball players in the Worlden are: - American - American - American - American - American - American - American - American - American - American - American - American - American - American - American - American - American - American - American - American - American - American - Amer",
+  "sft_4epochs_sampled": "Some of the championship wins in Championship are: World Worlden, Whel, Fen, 205013, 2014, 20 F1, 2010201, 1), 201, 2001, Others, 2013, 6, 20, 201, 201, 201, 201207, 19, 20, 20, 201019 F6"
+ },
+ {
+  "id": "dolly_val_00599",
+  "category": "information_extraction",
+  "instruction": "Who was Yoshikazu Shirakawa?",
+  "reference": "Yoshikazu Shirakawa was a Japanese photographer. He is particularly well known for his book Himalayas, published by Harry N. Abrams in 1971. He also wrote The Alps, translated by Max A. Wyss.",
+  "pretrained_greedy": "Buan, Buan, Buel, Buel, Buel, Buel and Buel were very happy. They had a lot of fun. They had a lot of fun.",
+  "sft_1epoch_greedy": "The book was a book.",
+  "sft_4epochs_greedy": "The Gujokokokokok was author who was author who was author who was author who was author who was author who was author who was author. He was author who was author who was author who was author who was author who was author. He was author who was author of the World Sea. He was authorldo. He was author of the World Sea. He was",
+  "sft_4epochs_sampled": "John Pal Rarp he made a Yahara, American singer, and created the 19th century and the famous Cupish genre. He served the Colished of his sister of his brother for his brother, the Solkyald and Juliard. He was released in Dovald of his name of Brazil, who died from the Bray. He was first released as the Hida. He is a Sarickarov and created the Sen Man singer on the British Viros. He was"
+ },
+ {
+  "id": "dolly_val_00433",
+  "category": "general_qa",
+  "instruction": "Why do little boys jump in a puddle of water or mud?",
+  "reference": "Because they can. Because it was there. Because they have a sense their mother or father will disapprove so they are naturally inclined to do so.",
+  "pretrained_greedy": "a big, and a big, and a big, red truck. He also liked to play with the red truck, and make loud noises. One day, Sam and Sam went to the park with their mom. They saw a big truck with a big truck. They wanted to play with it, but they did not want to play with it. They ran to the truck and ran to the truck. They ran to the truck and ran to the truck. They saw a big truck with a big truck. The truck was red and a truck. Sam and Sam were scared and angry. They did not like the truck. They did not",
+  "sft_1epoch_greedy": "The following are a lot of water, and a lot of water, and a lot of water.",
+  "sft_4epochs_greedy": "The boys are a lot of things that are not a lot of things that are not a lot of people. They are also a lot of things that they are not a lot of people. They are also a lot of people who are not a lot of people. They are also a lot of people who have a lot of people. They are also a lot of people who have a lot of people. They are also a lot of people. They are also a lot of people. They are also a lot of people. They are also a lot of people. They are also a lot of people. They are also a lot of people",
+  "sft_4epochs_sampled": "Yes, a lacurs has various graphical equipment forms of the oceans. For a superior to have a few different objects to the holes, it is not the perfect to have a sense of a long-con. Depending on the other hand is called a non-andsuously known as the largest difference between pandemical size of the water, the sand and dirt. Some people are also considered to be considered the ball of the water and trees. The objects are green, green grass and winds are not wet"
+ },
+ {
+  "id": "dolly_val_00458",
+  "category": "open_qa",
+  "instruction": "What are some interesting facts about tigers?",
+  "reference": "1. Tiger stripes are unique. 2. Tigers can use their ears to communicate. 3. India has over half the world's population of tigers. 4. Only one in ten hunts are successful.",
+  "pretrained_greedy": "a lot of different colors and shapes. One day, they decided to make a new game. They put on their shoes and started to make a big tower. They both had so much fun and they were very proud of their work. They decided to make a new game with their blocks. They put the blocks on their blocks and put them in the blocks. They put the blocks on their blocks and the blocks and the blocks. They made a big tower with a big tower. They put the blocks on the blocks and the blocks. They put the blocks on the blocks and the blocks. They put the blocks on the blocks and the blocks",
+  "sft_1epoch_greedy": "The following are: - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football - Football",
+  "sft_4epochs_greedy": "Some interesting things you can do with a lot of animals that are: - you can do with a lot of animals that are interested in the world - you can do with a lot of animals that are interested in the world - you can do with a lot of animals that are interested in the world - you can do with friends, and are interested in the world. - you can do that you can do with friends, and friends. - you can do with friends, friends, friends, and friends. - you can do a lot of friends. - you can do with friends, friends, friends, friends, friends, friends, friends",
+  "sft_4epochs_sampled": "Some important things you can do a village you can use to a plant on a plant, like a plant, eggs, eggs, eggs, eggs, and tomatoes, eggs"
+ },
+ {
+  "id": "dolly_val_00202",
+  "category": "classification",
+  "instruction": "Identify which instrument is string or woodwind: Tambura, Tubax",
+  "reference": "Tubax is woodwind, Tambura is string.",
+  "pretrained_greedy": "a very much. Trick was very excited. She wanted to make a new friend, but she didn't know how to use it. So, she decided to use her red string to make a big red string. She put it in her pocket and put it in the air. She put it in her pocket and put it in the air. She put it in her pocket and put it in the air. She was so proud of her work. She put the string in her pocket and put it in the air. She was so proud of her work. She was proud of her work. She was proud of her work.",
+  "sft_1epoch_greedy": "Bam is string, Ty is percussion.",
+  "sft_4epochs_greedy": "Tuba is string, Tuba is woodwind.",
+  "sft_4epochs_sampled": "Tultraphico is string, Terraphicraphic is woodwind."
+ },
+ {
+  "id": "dolly_val_00164",
+  "category": "general_qa",
+  "instruction": "what was the early uses of computers?",
+  "reference": "Early computers were meant to be used only for calculations. Simple manual instruments like the abacus have aided people in doing calculations since ancient times. Early in the Industrial Revolution, some mechanical devices were built to automate long, tedious tasks, such as guiding patterns for looms.",
+  "pretrained_greedy": "a lot of fun day, but he also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also also a good day.",
+  "sft_1epoch_greedy": "The United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the United States of the Un",
+  "sft_4epochs_greedy": "The early 1970s",
+  "sft_4epochs_sampled": "This is a popular language for the process of computer science that are commonly used to use the network which types of the computer network of common types of a duate network. It was designed to a computer commonly refer to the model of computer computer models that are used to companies of the development of computers: 1. Amazon, invent, due to due to the computer science that is the computer computer network of due to its prediction of development that computer. It was designed to programming language and"
+ },
+ {
+  "id": "dolly_val_00396",
+  "category": "brainstorming",
+  "instruction": "what are the benefits of reading to your children?",
+  "reference": "Reading to your kids benefits both the kids and yourself! Children learn empathy, expand their vocabulary, become better listeners develop their imagination by listening to the stories and creating their own vision in their minds. They also develop new skills based on the content of the books. For example, they will learn how the human body works if you read them books about body parts; they will understand emotions better if you introduce them to cute picture books on feelings. A good children's story should have repetition, relatable characters, and predictability. The story of Goldilocks, the three little pigs, Jack and the beanstalk, and Charlie and the chocolate factory are some good examples. If kids can recite the stories or rephrase them to others, they have learned to express themselves!",
+  "pretrained_greedy": "a lot of fun, but it was not a lot of fun. One day, they decided to go to the park to play. They ran to the park and ran to the park. They saw a big, red ball and a big, and a big, red ball. They were very happy and excited. They ran to the park and ran to the park. They saw a big dog with a ball and a ball. The dog was very happy. They ran to the ball and ran to the park. They saw a big dog and a dog. The dog was angry and angry. He ran away from the dog and barked.",
+  "sft_1epoch_greedy": "The benefits of your children are: - They are a greatesticality - They are a greatesticality - They are a greatesticality - They are a greatesticality - They are a greatesticality - They are a greatesticality - They are a greatesticality - They are a greatesticality - They are a greatesticality - They are greatesticality - They are greatesticality - They are greatesticality - They are greatesticality - They are greatest",
+  "sft_4epochs_greedy": "The following are the following are the following are: 1. Most of the following are: 1. Most 2. Most 2. Most 2. Most 2. Most 3. Most 4. Most 5. Most 5. Most 5. Most 5. Most 5. Most 5. Most 5. Most 5. Most 5. Most 5. Most 5. Most 5. Most",
+  "sft_4epochs_sampled": "-baning a various events, reading that are the most popular production. People who are essional children that come from the children can have kids, creating their children in their children in their kids. Another reason for their children's children who are children. The children also give their child to the children, and childrenhood, children who have children to know their children."
+ }
+]

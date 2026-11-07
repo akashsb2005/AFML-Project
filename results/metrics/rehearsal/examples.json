@@ -1,0 +1,56 @@
+{
+  "story_std": [
+    {
+      "id": "val_story_00",
+      "prompt": "Once upon a time, there was",
+      "generation": "a little girl named Lily. She loved to play outside in the park. One day, she saw a big, scary dog. The dog was very sad and didn't know what to do. Lily's mom said, \"I'm sorry, Lily. I didn't want to play with you.\" Lily said, \"",
+      "repetition_4gram": 0.0
+    },
+    {
+      "id": "val_story_03",
+      "prompt": "Lily and Ben are friends. They",
+      "generation": "like to play in the park. One day, they see a big slide. It is a big slide. It is a big slide. It is a big slide. It is a big slide. It is a big slide. It is a big slide. It is a big slide. It is a big slide.",
+      "repetition_4gram": 0.7049180327868853
+    }
+  ],
+  "story_lin": [
+    {
+      "id": "val_story_00",
+      "prompt": "Once upon a time, there was",
+      "generation": "a little girl named Lily. She loved to play outside in the park. One day, she saw a big, scary dog. The dog was scared and wanted to play with it. Lily asked her mom if she could go to the dog. Her mom said yes and they went to the park. Lily was so happy",
+      "repetition_4gram": 0.0
+    },
+    {
+      "id": "val_story_03",
+      "prompt": "Lily and Ben are friends. They",
+      "generation": "like to play in the park. They like to play with toys and cars. One day, they see a big box in the box. It is a box with a box. It is a box. It is a box. It is a box. It is a box. It is a box. It is a",
+      "repetition_4gram": 0.4262295081967213
+    }
+  ],
+  "instruction_pretrained_std": [
+    {
+      "id": "dolly_test_00175",
+      "category": "classification",
+      "instruction": "Identify which instrument is string or percussion: Cultrun, Kora",
+      "generation": "\"I'm sorry, I'm sorry I didn't mean to hurt you. I'm sorry I didn't mean to hurt you.\" The moral of the story is that it's important to be kind and kind to others, and that it's important to others, and to others, and to always be kind to others",
+      "stopped_on_eos": false,
+      "repetition_4gram": 0.2463768115942029
+    },
+    {
+      "id": "dolly_test_00607",
+      "category": "creative_writing",
+      "instruction": "Describe how you would approach a corporate rebrand. Share your objectives, timeline, required budget and resources, and how you would measure your success.",
+      "generation": "\"I'm glad you're welcome, I'm glad you're welcome, but I'm glad you're welcome, but I'm glad you're welcome, but I'm glad you're welcome, but you're welcome, but you're welcome, you're welcome, you're welcome, you're welcome, you're welcome",
+      "stopped_on_eos": false,
+      "repetition_4gram": 0.7402597402597403
+    },
+    {
+      "id": "dolly_test_00104",
+      "category": "open_qa",
+      "instruction": "What is TESSA?",
+      "generation": "\"I'm sorry, I'm sorry I didn't mean to hurt you. I'm sorry I didn't mean to you. I'm sorry I didn't mean to you. I didn't mean to hurt you.\" The moral of the story is that it's important to be kind and kind to others.",
+      "stopped_on_eos": true,
+      "repetition_4gram": 0.37681159420289856
+    }
+  ]
+}

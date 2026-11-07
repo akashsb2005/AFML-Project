@@ -1,0 +1,12 @@
+{
+  "mean_nll": 2.6785667773318815,
+  "perplexity": 14.56420458221715,
+  "tokens_scored": 98740,
+  "stories": 500,
+  "blocks": 562,
+  "block_size": 256,
+  "label": "reh2_pre_val",
+  "ckpt": "pre/best_checkpoint.pt",
+  "data_file": "data/processed/tiny_stories_validation.jsonl",
+  "hardware": "mps"
+}
