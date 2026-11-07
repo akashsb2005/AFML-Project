@@ -1,29 +1,22 @@
 # Integration interfaces
 
-Member 1 owns the model interface and Member 2 owns the data/tokenizer interface (plan §5, rules 1–4).
-Member 3's code reaches the model, tokenizer and data only through `src/model_api.py`, so if a name below
-changes, only that adapter needs editing.
+Member 1 owns the Transformer and pretraining; Member 2 owns datasets, tokenizer, preprocessing, and SFT; Member 3 owns evaluation and benchmarking. `src/model_api.py` is the shared evaluation adapter.
 
-## Data and tokenizer — Member 2 (as implemented in `src/preprocess.py`, `src/tokenizer.py`, `src/dataset.py`)
+## Tokenizer and data
 
-| item | value |
+| Interface | Contract |
 |---|---|
-| tokenizer | `artifacts/tokenizer/tokenizer.json` (Byte-level BPE, Hugging Face `tokenizers`), config in `artifacts/tokenizer/config.json` |
-| vocabulary | 8000 |
-| special tokens | `[PAD]`=0, `[UNK]`=1, `[BOS]`=2, `[EOS]`=3, `[SEP]`=4 |
-| `tokenizer.encode(text)` | adds `[BOS] … [EOS]` (post-processor); `add_special_tokens=False` gives the bare text |
-| TinyStories | `data/processed/tiny_stories_{train,validation,test}.jsonl`, field `text`; 9,000 / 500 / 500 stories, seed 42 |
-| pre-training samples | `TinyStoriesDataset(split, block_size)`: each story encoded as `[BOS] story [EOS]`, cut into blocks of `block_size` (consecutive blocks share one token), right-padded with 0; `labels` = next token, `-100` on padding; `attention_mask` |
-| Dolly | `data/processed/dolly_{train,validation,test}.jsonl`, fields `prompt`, `response`, `category`; 13,500 / 750 / 750, seed 42 |
-| SFT template | `"Instruction: {instruction}\n" + ("Context: {context}\n" if context) + "Response:"` — stored ready-made in `prompt` |
-| SFT samples | `DollySFTDataset(split, max_length)`: prompt and response encoded **without** special tokens and concatenated **without** a space, then `[EOS]`; labels `-100` on the prompt and padding; if too long the response is kept and the prompt cut from the left |
+| Tokenizer artifact | `artifacts/tokenizer/tokenizer.json` plus `config.json`; ByteLevel BPE, 8,000 IDs |
+| Special tokens | `[PAD]`=0, `[UNK]`=1, `[BOS]`=2, `[EOS]`=3, `[SEP]`=4 |
+| Whole-document encoding | Tokenizer post-processor adds BOS and EOS |
+| TinyStories | JSONL `text`; `TinyStoriesDataset(split, block_size)` produces fixed-length `input_ids`, shifted `labels`, `attention_mask` |
+| Dolly | JSONL `prompt`, `response`, `category`; 90/5/5 seeded splits after normalized-prompt deduplication |
+| SFT format | `Instruction: {instruction}\n[Context: {context}\n]Response:` |
+| Dolly tensors | `DollySFTDataset(split, max_length=256)` returns fixed-length `input_ids`, `labels`, `attention_mask`; prompt/pad labels are `-100`, response and EOS are supervised |
 
-**Must hold for integration:** `block_size` (pre-training) and `max_length` (SFT) must equal the model's
-`context_length`. The `DollySFTDataset` default `max_length=512` would exceed a 256-token context.
+`data/processed/` is generated locally by `python src/preprocess.py --stage all`. Train the tokenizer only on `tiny_stories_train.jsonl`. Dolly split validation is available as `preprocess.validate_dolly_splits`.
 
-Member 3's evaluation reproduces both constructions exactly (`evaluate.story_blocks`,
-`evaluate.build_sft_example`; checked to be identical to the dataset classes on the validation/test
-splits), so evaluation losses are the same quantities as the training losses.
+On SFT overflow, the full prompt is retained and only the response tail is truncated. One position is reserved for EOS. Records whose full prompt and EOS do not fit are skipped and counted. Evaluation uses the same response truncation and skip behavior in `evaluate.build_sft_example`.
 
 ## Model — Member 1 (implemented in `src/model.py` and `src/efficient_model.py`)
 
@@ -62,3 +55,8 @@ Existing logs with a different header are rejected to prevent mixing incompatibl
 
 `results/metrics/<run_id>_train_log.csv` with columns `step,tokens_seen,train_loss,val_loss,lr,elapsed_s`
 (`val_loss` empty on steps without evaluation). `tokens_seen` should count non-padding tokens.
+
+## SFT checkpoints
+
+`src/sft.py` reads the architecture from the pretraining checkpoint and saves `checkpoints/sft/{best,latest}.pt` with `model_state`, `model_state_dict`, canonical `config`, `tokenizer_path`, `training_config`, optimizer state, step, epoch, validation loss and `stage: "sft"`. Model weight files are not committed.
+

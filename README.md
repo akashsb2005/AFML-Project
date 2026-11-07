@@ -9,17 +9,20 @@ fine-tuned on Databricks Dolly 15K, and compared with an efficient (linear) atte
 | Haneesh | Member 2 — data, tokenizer & SFT | `src/tokenizer.py`, `src/dataset.py`, `src/preprocess.py`, `src/sft.py` |
 | Samvith | Member 3 — evaluation, experiments & report | `src/evaluate.py`, `src/benchmark.py`, `src/model_api.py`, `src/select_eval_prompts.py`, `src/make_figures.py`, `src/log_experiment.py`, `experiments/`, `results/`, `report/` |
 
-Interfaces between the parts: **`docs/interfaces.md`** (please agree on it before integrating).
+Interfaces between the parts: **`docs/interfaces.md`**. Member 2's detailed workflow is in **`docs/member2_data_sft.md`**.
 
 ## Setup
 
 ```bash
 pip install -r requirements.txt
-python -m pytest -q          # contract tests run on src/model.py automatically once it exists
+python -m pytest -q
+python src/preprocess.py --stage all
+python src/tokenizer.py
 ```
 
-GPU runs: `notebooks/member3_colab.ipynb` (evaluation + benchmarks). Large files (`data/processed/`,
-`artifacts/tokenizer/`, checkpoints) live in the shared Drive folder, not in git.
+Generated datasets and model checkpoints are not committed. The checked 8,000-token tokenizer artifact is tracked at `artifacts/tokenizer/` so local evaluation and SFT share the same IDs. GPU runs: `notebooks/member3_colab.ipynb` (evaluation + benchmarks).
+
+SFT uses Member 1's pretraining checkpoint and defaults to a 256-token context. See `docs/member2_data_sft.md` for the exact command, checkpoint format, prompt masking, and regeneration steps.
 
 ## Member 3 tools
 

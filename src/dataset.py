@@ -112,7 +112,7 @@ class TinyStoriesDataset(Dataset):
 class DollySFTDataset(Dataset):
     """Instruction tuning examples with response-only loss masking."""
 
-    def __init__(self, split="train", max_length=512):
+    def __init__(self, split="train", max_length=256):
         if split not in {"train", "validation", "test"}:
             raise ValueError("Invalid split.")
 
@@ -122,17 +122,29 @@ class DollySFTDataset(Dataset):
         self.max_length = max_length
         self.tokenizer = load_tokenizer()
         self.examples = []
+        self.stats = {
+            "original_examples": 0,
+            "empty_examples_skipped": 0,
+            "overlength_examples": 0,
+            "prompt_too_long_skipped": 0,
+            "responses_truncated": 0,
+            "final_examples_retained": 0,
+        }
 
         path = DATA_DIR / f"dolly_{split}.jsonl"
         if not path.exists():
             raise FileNotFoundError(path)
 
         eos_id = self.tokenizer.token_to_id("[EOS]")
+        pad_id = self.tokenizer.token_to_id("[PAD]")
 
         if eos_id is None:
             raise ValueError("Tokenizer does not contain an [EOS] token.")
+        if pad_id is None:
+            raise ValueError("Tokenizer does not contain a [PAD] token.")
 
         for row in read_jsonl(path):
+            self.stats["original_examples"] += 1
             prompt = row["prompt"]
             response = row["response"]
 
@@ -147,21 +159,24 @@ class DollySFTDataset(Dataset):
             ).ids
 
             # Empty responses cannot provide a useful SFT target.
-            if not response_ids:
+            if not prompt_ids or not response_ids:
+                self.stats["empty_examples_skipped"] += 1
                 continue
 
-            # If the sequence is too long, preserve as much of the
-            # response as possible and truncate the prompt to fit.
+            # Preserve the full instruction. Truncate only the response and
+            # always reserve one position for EOS.
             if len(prompt_ids) + len(response_ids) + 1 > max_length:
-                response_ids = response_ids[:max_length - 2]
-
-                # Reserve one position for the EOS token.
-                max_prompt_length = (
-                    max_length - len(response_ids) - 1
-                )
-
-                # Keep the end of the prompt nearest the response.
-                prompt_ids = prompt_ids[-max_prompt_length:]
+                self.stats["overlength_examples"] += 1
+                if len(prompt_ids) + 1 >= max_length:
+                    self.stats["prompt_too_long_skipped"] += 1
+                    continue
+                response_budget = max_length - len(prompt_ids) - 1
+                if len(response_ids) > response_budget:
+                    self.stats["responses_truncated"] += 1
+                    response_ids = response_ids[:response_budget]
+                if not response_ids:
+                    self.stats["empty_examples_skipped"] += 1
+                    continue
 
             # Construct the complete sequence.
             input_ids = prompt_ids + response_ids + [eos_id]
@@ -179,7 +194,7 @@ class DollySFTDataset(Dataset):
             padding = max_length - len(input_ids)
 
             if padding > 0:
-                input_ids += [0] * padding
+                input_ids += [pad_id] * padding
                 labels += [-100] * padding
                 attention_mask += [0] * padding
 
@@ -189,10 +204,10 @@ class DollySFTDataset(Dataset):
                 "attention_mask": attention_mask,
             })
 
-        print(
-            f"Dolly {split}: {len(self.examples)} examples "
-            f"(max length {max_length})"
-        )
+        self.stats["final_examples_retained"] = len(self.examples)
+        print(f"Dolly {split} statistics (max length {max_length}):")
+        for name, count in self.stats.items():
+            print(f"  {name}: {count}")
 
     def __len__(self):
         return len(self.examples)

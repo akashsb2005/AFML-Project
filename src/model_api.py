@@ -47,7 +47,10 @@ def build_model(config: dict, builder: str = "src.model:build_model") -> torch.n
 def load_checkpoint(path: str, device: torch.device, builder: str = "src.model:build_model"):
     ckpt = torch.load(path, map_location="cpu", weights_only=False)
     model = build_model(ckpt["config"], builder)
-    model.load_state_dict(ckpt["model_state"])
+    state = ckpt.get("model_state", ckpt.get("model_state_dict"))
+    if state is None:
+        raise KeyError(f"{path}: checkpoint is missing model_state/model_state_dict")
+    model.load_state_dict(state)
     model.to(device).eval()
     return model, ckpt
 
