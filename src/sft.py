@@ -1,11 +1,13 @@
 """Response-only supervised fine-tuning using the shared AFML model interface."""
 
 import argparse
+import csv
 import importlib
 import inspect
 import json
 import random
 import sys
+import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -19,18 +21,21 @@ from dataset import DollySFTDataset
 ROOT = Path(__file__).resolve().parent.parent
 CHECKPOINT_DIR = ROOT / "checkpoints"
 OUTPUT_DIR = ROOT / "checkpoints" / "sft"
+LOG_FIELDS = ["step", "tokens_seen", "train_loss", "val_loss", "lr", "elapsed_s"]
 
 
 @dataclass
 class SFTConfig:
     max_length: int = 256
     batch_size: int = 4
-    epochs: int = 1
-    learning_rate: float = 2e-5
+    epochs: int = 4
+    learning_rate: float = 3e-4
     weight_decay: float = 0.01
     num_workers: int = 0
     seed: int = 42
     log_every: int = 10
+    eval_interval: int = 500
+    max_steps: int = 0
 
 
 def set_seed(seed):
@@ -122,6 +127,66 @@ def run_epoch(model, loader, device, optimizer=None, log_every=10):
     return total_loss / total_batches
 
 
+def _append_log(path, row):
+    new_file = not path.exists()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=LOG_FIELDS)
+        if new_file:
+            writer.writeheader()
+        writer.writerow(row)
+
+
+def fine_tune(model, train_loader, val_loader, optimizer, device, config, output_dir, log_path):
+    """Train with periodic validation, log the same columns as pretraining, keep best and latest checkpoints."""
+    output_dir, log_path = Path(output_dir), Path(log_path)
+    log_path.unlink(missing_ok=True)
+    best_loss, step, tokens_seen, start = float("inf"), 0, 0, time.perf_counter()
+    window_loss, window_steps = 0.0, 0
+
+    def validate(epoch):
+        nonlocal best_loss, window_loss, window_steps
+        val_loss = run_epoch(model, val_loader, device)
+        model.train()
+        train_loss = window_loss / window_steps if window_steps else None
+        window_loss, window_steps = 0.0, 0
+        _append_log(log_path, {"step": step, "tokens_seen": tokens_seen,
+                               "train_loss": "" if train_loss is None else f"{train_loss:.6f}",
+                               "val_loss": f"{val_loss:.6f}", "lr": config.learning_rate,
+                               "elapsed_s": f"{time.perf_counter() - start:.2f}"})
+        print(f"Step {step} epoch {epoch}: train_loss={train_loss} val_loss={val_loss:.4f}")
+        save_checkpoint(model, optimizer, epoch, val_loss, config, output_dir / "latest.pt", step=step)
+        if val_loss < best_loss:
+            best_loss = val_loss
+            save_checkpoint(model, optimizer, epoch, val_loss, config, output_dir / "best.pt", step=step)
+
+    model.train()
+    for epoch in range(1, config.epochs + 1):
+        for batch in train_loader:
+            input_ids = batch["input_ids"].to(device)
+            labels = batch["labels"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            optimizer.zero_grad(set_to_none=True)
+            loss = causal_lm_loss(get_logits(_model_forward(model, input_ids, attention_mask)), labels)
+            loss.backward()
+            optimizer.step()
+            step += 1
+            tokens_seen += int(attention_mask.sum())
+            window_loss += float(loss.detach())
+            window_steps += 1
+            if config.log_every > 0 and step % config.log_every == 0:
+                print(f"Step {step} loss={loss.detach().item():.4f}")
+            if config.eval_interval > 0 and step % config.eval_interval == 0:
+                validate(epoch)
+            if config.max_steps and step >= config.max_steps:
+                break
+        if window_steps:   # end of epoch, unless the last step was just validated
+            validate(epoch)
+        if config.max_steps and step >= config.max_steps:
+            break
+    return best_loss
+
+
 def model_config_for(model):
     blocks = getattr(model, "blocks", ())
     block_heads = getattr(getattr(blocks[0], "attention", None), "num_heads", 4) if blocks else 4
@@ -136,10 +201,10 @@ def model_config_for(model):
     }
 
 
-def save_checkpoint(model, optimizer, epoch, val_loss, config, path):
+def save_checkpoint(model, optimizer, epoch, val_loss, config, path, step=None):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"epoch": epoch, "model_state_dict": model.state_dict(),
+    torch.save({"epoch": epoch, "step": step, "model_state_dict": model.state_dict(),
                 "model_state": model.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "validation_loss": val_loss, "config": model_config_for(model),
@@ -231,15 +296,19 @@ def validate_model_compatibility(model, max_length, expected_vocab_size=8000):
 def parse_args():
     parser = argparse.ArgumentParser(description="Fine-tune the AFML causal LM on Dolly.")
     parser.add_argument("--model-factory", default="src.model:build_model", help="Model factory as package.module:callable")
-    parser.add_argument("--pretrained-checkpoint", type=Path, default=CHECKPOINT_DIR / "pretrain.pt")
+    parser.add_argument("--pretrained-checkpoint", type=Path,
+                        default=CHECKPOINT_DIR / "baseline_standard" / "best_checkpoint.pt")
     parser.add_argument("--max-length", type=int, default=256)
     parser.add_argument("--batch-size", type=int, default=4)
-    parser.add_argument("--epochs", type=int, default=1)
-    parser.add_argument("--learning-rate", type=float, default=2e-5)
+    parser.add_argument("--epochs", type=int, default=4)
+    parser.add_argument("--learning-rate", type=float, default=3e-4)
     parser.add_argument("--weight-decay", type=float, default=0.01)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--log-every", type=int, default=10)
+    parser.add_argument("--eval-interval", type=int, default=500, help="validate every N steps and at each epoch end")
+    parser.add_argument("--max-steps", type=int, default=0, help="stop early after N steps (0 = run all epochs)")
     parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR)
+    parser.add_argument("--log-path", type=Path, default=ROOT / "results" / "metrics" / "sft_train_log.csv")
     return parser.parse_args()
 
 
@@ -248,7 +317,8 @@ def main():
     config = SFTConfig(max_length=args.max_length, batch_size=args.batch_size,
                        epochs=args.epochs, learning_rate=args.learning_rate,
                        weight_decay=args.weight_decay, seed=args.seed,
-                       log_every=args.log_every)
+                       log_every=args.log_every, eval_interval=args.eval_interval,
+                       max_steps=args.max_steps)
     if config.max_length < 3 or config.batch_size < 1 or config.epochs < 1:
         raise ValueError("max_length must be >=3; batch_size and epochs must be positive")
     set_seed(config.seed)
@@ -293,15 +363,7 @@ def main():
                                   weight_decay=config.weight_decay)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "config.json").write_text(json.dumps(asdict(config), indent=2), encoding="utf-8")
-    best_loss = float("inf")
-    for epoch in range(1, config.epochs + 1):
-        train_loss = run_epoch(model, train_loader, device, optimizer, config.log_every)
-        val_loss = run_epoch(model, val_loader, device)
-        print(f"Epoch {epoch}/{config.epochs}: train_loss={train_loss:.4f} val_loss={val_loss:.4f}")
-        save_checkpoint(model, optimizer, epoch, val_loss, config, args.output_dir / "latest.pt")
-        if val_loss < best_loss:
-            best_loss = val_loss
-            save_checkpoint(model, optimizer, epoch, val_loss, config, args.output_dir / "best.pt")
+    fine_tune(model, train_loader, val_loader, optimizer, device, config, args.output_dir, args.log_path)
 
 
 if __name__ == "__main__":

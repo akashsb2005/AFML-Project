@@ -1,3 +1,4 @@
+import csv
 import json
 import sys
 import tempfile
@@ -14,7 +15,7 @@ import dataset
 import preprocess
 import sft
 import tokenizer
-from src import evaluate, model_api, pretrain, pretrain_efficient
+from src import evaluate, model_api, training
 from src.model import SmallLanguageModel
 from src.efficient_model import EfficientSmallLanguageModel
 
@@ -200,47 +201,49 @@ class SFTTests(unittest.TestCase):
             self.assertEqual(payload["stage"], "sft")
             self.assertTrue(torch.equal(loaded(ids), logits))
 
-    def test_pretraining_loops_and_checkpoint_load_through_evaluation_adapter(self):
+    def test_pretraining_checkpoint_loads_through_sft_and_evaluation_adapter(self):
         ids = torch.randint(0, 8000, (2, 8))
         batch = {"input_ids": ids, "labels": ids.clone(), "attention_mask": torch.ones_like(ids)}
-        for cls, evaluate_fn, save_fn, attention in (
-            (SmallLanguageModel, pretrain.evaluate, pretrain.save_checkpoint, "standard"),
-            (EfficientSmallLanguageModel, pretrain_efficient.evaluate,
-             pretrain_efficient.save_checkpoint, "linear"),
-        ):
+        for cls, attention in ((SmallLanguageModel, "standard"), (EfficientSmallLanguageModel, "linear")):
             model = cls(vocab_size=8000, embedding_dim=16, num_heads=4,
                         num_layers=1, max_seq_len=32, dropout=0.0)
-            val_loss = evaluate_fn(model, [batch], torch.device("cpu"))
+            val_loss, _ = training.evaluate(model, [batch], torch.device("cpu"))
             self.assertGreater(val_loss, 0)
             optimizer = torch.optim.AdamW(model.parameters())
+            config = {"model": {"vocab_size": 8000, "n_layer": 1, "n_head": 4, "d_model": 16, "context_length": 32,
+                                "dropout": 0.0, "attention": attention},
+                      "train": {}, "data": {"tokenizer": "artifacts/tokenizer/tokenizer.json"}}
             with tempfile.TemporaryDirectory() as td:
                 path = Path(td) / "pretrain.pt"
-                save_fn(path, 1, model, optimizer, {}, 1.0, val_loss)
+                training._save_checkpoint(path, step=1, tokens_seen=16, model=model, optimizer=optimizer,
+                                          config=config, train_loss=1.0, validation_loss=val_loss,
+                                          best_validation_loss=val_loss, elapsed_s=0.0,
+                                          data_rng_state=torch.get_rng_state())
                 payload = sft.read_checkpoint(path, torch.device("cpu"))
                 self.assertEqual(payload["config"]["attention"], attention)
                 loaded, _ = model_api.load_checkpoint(str(path), torch.device("cpu"))
                 self.assertTrue(torch.allclose(loaded(ids), model(ids), atol=1e-6))
 
-    def test_pretraining_loops_and_checkpoint_load_through_evaluation_adapter(self):
-        ids = torch.randint(0, 8000, (2, 8))
-        batch = {"input_ids": ids, "labels": ids.clone(), "attention_mask": torch.ones_like(ids)}
-        for cls, evaluate_fn, save_fn, attention in (
-            (SmallLanguageModel, pretrain.evaluate, pretrain.save_checkpoint, "standard"),
-            (EfficientSmallLanguageModel, pretrain_efficient.evaluate,
-             pretrain_efficient.save_checkpoint, "linear"),
-        ):
-            model = cls(vocab_size=8000, embedding_dim=16, num_heads=4,
-                        num_layers=1, max_seq_len=32, dropout=0.0)
-            val_loss = evaluate_fn(model, [batch], torch.device("cpu"))
-            self.assertGreater(val_loss, 0)
-            optimizer = torch.optim.AdamW(model.parameters())
-            with tempfile.TemporaryDirectory() as td:
-                path = Path(td) / "pretrain.pt"
-                save_fn(path, 1, model, optimizer, {}, 1.0, val_loss)
-                payload = sft.read_checkpoint(path, torch.device("cpu"))
-                self.assertEqual(payload["config"]["attention"], attention)
-                loaded, _ = model_api.load_checkpoint(str(path), torch.device("cpu"))
-                self.assertTrue(torch.allclose(loaded(ids), model(ids), atol=1e-6))
+    def test_fine_tune_logs_validation_and_keeps_best_checkpoint(self):
+        ids = torch.randint(5, 8000, (2, 8))
+        labels = ids.clone()
+        labels[:, :3] = -100
+        batch = {"input_ids": ids, "labels": labels, "attention_mask": torch.ones_like(ids)}
+        model = SmallLanguageModel(vocab_size=8000, embedding_dim=16, num_heads=4,
+                                   num_layers=1, max_seq_len=32, dropout=0.0)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=1e-2)
+        config = sft.SFTConfig(max_length=8, epochs=2, log_every=0, eval_interval=2, learning_rate=1e-2)
+        with tempfile.TemporaryDirectory() as td:
+            log_path = Path(td) / "log.csv"
+            sft.fine_tune(model, [batch] * 3, [batch], optimizer, torch.device("cpu"), config, Path(td), log_path)
+            rows = list(csv.DictReader(log_path.open()))
+            self.assertEqual([int(r["step"]) for r in rows], [2, 3, 4, 6])
+            self.assertEqual(int(rows[-1]["tokens_seen"]), 6 * 16)
+            self.assertTrue((Path(td) / "best.pt").exists() and (Path(td) / "latest.pt").exists())
+            self.assertTrue(model.training)
+            config = sft.SFTConfig(max_length=8, epochs=5, log_every=0, eval_interval=0, max_steps=4)
+            sft.fine_tune(model, [batch] * 3, [batch], optimizer, torch.device("cpu"), config, Path(td), log_path)
+            self.assertEqual([int(r["step"]) for r in csv.DictReader(log_path.open())], [3, 4])
 
     def test_evaluation_builder_preserves_prompt_and_matches_response_truncation(self):
         tok = model_api.load_tokenizer(str(ROOT / "artifacts" / "tokenizer" / "tokenizer.json"))

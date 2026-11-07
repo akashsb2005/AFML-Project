@@ -56,16 +56,16 @@ The SFT context is 256 by default and must not exceed model `context_length`. Wh
 
 ## SFT training and checkpoint use
 
-Member 1's pretraining script saves a checkpoint with both `model_state` and `model_state_dict`, canonical architecture `config`, `tokenizer_path`, and stage metadata. It currently writes `last_checkpoint.pt` to the configured Google Drive location. Copy that file locally or pass its full path:
+Member 1's pretraining saves `checkpoints/<run_name>/best_checkpoint.pt` with `model_state`, the model `config` and `tokenizer_path`. `src/sft.py` uses the standard-attention checkpoint by default:
 
 ```powershell
-python src/sft.py --pretrained-checkpoint D:\path\to\last_checkpoint.pt --max-length 256 --batch-size 4 --learning-rate 0.00002 --epochs 1
+python src/sft.py --pretrained-checkpoint checkpoints\baseline_standard\best_checkpoint.pt --max-length 256 --batch-size 4 --learning-rate 0.0003 --epochs 4
 ```
 
-`src.model:build_model` is the default factory. The SFT runner reads architecture settings from the checkpoint, verifies that vocabulary is 8,000 and context supports the requested length, loads weights strictly, chooses CUDA when available and otherwise CPU, and uses AdamW. It validates every epoch without gradients and writes `checkpoints/sft/best.pt`, `latest.pt`, and `config.json`. Checkpoints contain the `model_state` key and canonical config used by Member 3's `src.model_api.load_checkpoint`; optimizer and training metadata are also saved. Checkpoint files are ignored by Git.
+`src.model:build_model` is the default factory. The SFT runner reads architecture settings from the checkpoint, verifies that vocabulary is 8,000 and context supports the requested length, loads weights strictly, chooses CUDA when available and otherwise CPU, and uses AdamW. It validates every 500 steps and at each epoch end, and writes `checkpoints/sft/best.pt`, `latest.pt`, `config.json` and the log `results/metrics/sft_train_log.csv` (same columns as pretraining). The defaults (lr 3e-4, 4 epochs) come from a comparison on Dolly validation (`results/metrics/rehearsal_sft/`). Checkpoints contain the `model_state` key and canonical config used by Member 3's `src.model_api.load_checkpoint`; optimizer and training metadata are also saved. Checkpoint files are ignored by Git.
 
 Member 1 can use the tracked tokenizer and `TinyStoriesDataset` for pretraining; its loop receives shifted labels and the attention mask. Member 3 can use the same tokenizer and `dolly_test.jsonl`, with train/validation files passed to evaluation's `--exclude` option. The prompt template is shared with preprocessing and SFT. Evaluation SFT loss now uses full prompt preservation and response-tail truncation like training.
 
 ## Integration details
 
-Member 1's baseline model now has a `build_model(config)` factory used by evaluation and SFT. The smallest necessary interface correction accepts/validates optional `attention_mask`; standard causal self-attention can safely ignore a right-padding suffix because it cannot influence preceding causal positions. Without `targets`, both model variants return logits `[B,T,V]`; with `targets`, they return `(logits, loss)`. Member 1's pretraining evaluation calls were updated for this logits-only inference interface. See `docs/interfaces.md` for checkpoint and model details.
+`src.model:build_model(config)` builds either attention variant and is used by evaluation and SFT. Without `targets`, both models return logits `[B,T,V]`; with `targets`, they return `(logits, loss)`. See `docs/interfaces.md` for checkpoint and model details.
