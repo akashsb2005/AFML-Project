@@ -33,7 +33,7 @@ def test_validate_config_rejects_non_divisible_model_dimensions():
         "train": {"batch_size": 1, "lr": 1e-3, "weight_decay": 0.0,
                   "warmup_steps": 0, "max_steps": 2, "eval_interval": 1,
                   "eval_batches": 1},
-        "data": {},
+        "data": {"train_jsonl": "x", "validation_jsonl": "x", "tokenizer": "x"},
     }
     with pytest.raises(ValueError, match="divisible"):
         validate_config(config)
