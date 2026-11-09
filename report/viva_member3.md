@@ -68,8 +68,11 @@ one rater), hardware and noise; don't claim "improves" without a measured, large
 
 ## Likely questions on our own numbers (fill in once results exist)
 
-* What is your final validation perplexity, and what does it mean compared with 8000? — _TBD_
-* Did SFT reduce response NLL, and by how much? Did rubric scores agree? — _TBD_
+* What is your final validation perplexity, and what does it mean compared with 8000? — 8.60 on validation and 8.51 on
+  test (standard attention, 10,000 steps). On average the model is about as unsure as if it were choosing among 8–9
+  equally likely next tokens, instead of all 8,000. Validation loss was still falling at the last step, so it is not overfitting.
+* Did SFT reduce response NLL, and by how much? Did rubric scores agree? — Yes. Dolly test response NLL fell from 6.38 to 3.93,
+  so response perplexity fell from 589 to 51. EOS rate rose from 0.33 to 0.55 and ROUGE-L from 0.078 to 0.139 (greedy). The rubric is still to be scored blind.
 * At which sequence length (if any) is linear attention faster / lighter than softmax on our GPU? — On the T4,
   at **none of the lengths we measured (128–2048)**. It trains at 0.35–0.40× the speed and uses 2.2–2.5× the
   memory. But its forward time grows ≈ 2.0× per doubling of T against 2.0 → 2.95× for softmax, so the gap shrinks
@@ -79,21 +82,23 @@ one rater), hardware and noise; don't claim "improves" without a measured, large
   projections; both have 5,273,088 parameters (tied input/output embeddings).
 * How do you know the speed difference is real and not noise? — 4 identical runs: standard 68,325 ± 903 tokens/s,
   linear 27,094 ± 226 — the difference is ~40 standard deviations.
-* What did linear attention cost in perplexity? — Provisional rehearsal (3,000 identical steps): validation
-  perplexity 16.81 vs 15.42 for softmax (9 % higher), and 2.8× the training time. Both were still improving, so the
-  final gap needs the official longer runs.
+* What did linear attention cost in perplexity? — In the final runs (10,000 identical steps), test perplexity was 8.78 vs
+  8.51 (3.1% higher), and training took 2.34× as long (3,319 s vs 1,419 s). After the same SFT, linear attention's
+  response NLL was 4.11 vs 3.93. The gap was 9% in the 3,000-step rehearsal, so it is narrowing, and both curves were still
+  falling.
 * Why is your validation loss lower than the training loss early on? — The training loss is averaged over the
   last 250 steps (the model was worse at the start of that window) and computed with dropout on; validation
   is measured at the end of the window with dropout off.
 * Why does the pre-trained model answer "What is TESSA?" with a story? — It has only ever seen children's
   stories; instruction following is exactly what SFT has to add.
-* Why did repetition get worse after fine-tuning when the loss improved? — Provisional rehearsal: response NLL fell
-  from 6.96 to 4.18 but greedy 4-gram repetition rose from 0.27 to 0.65. NLL scores each next token given the true previous tokens;
+* Why did repetition get worse after fine-tuning when the loss improved? — Final runs: response NLL fell from 6.38 to 3.93,
+  but greedy 4-gram repetition rose from 0.26 to 0.45, and 32 of 60 outputs loop (against 11 before). NLL scores each next token given the true previous tokens;
   greedy decoding feeds the model its own output, so one repeated phrase makes that phrase more likely again. The response
   distribution is also much less certain than story text, so the most likely token is often a common phrase. Sampling
-  brought repetition down to 0.02 on the same model, which points at the decoding as much as at the model.
+  brought repetition down to 0.035 (1 looping output of 60) on the same model, which points at the decoding as much as at the model.
 * How did you choose the SFT learning rate without using the test set? — On Dolly validation only: lr 2e-5, 1e-4 and 3e-4 gave
   response NLL 5.34, 4.84 and 4.64 after one epoch.
-* Give one failure example and its likely cause. — Provisional: "Identify which instrument is string or woodwind: Tambura, Tubax"
-  → "Tuba is string, Tuba is woodwind." The format is right and the content is wrong. The model has learned the answer shape, but
+* Give one failure example and its likely cause. — Final SFT model, "Give me a list of pros and cons of buying a bigger house"
+  → "1. Compically, you can consider a bigger house. 2. Compically, you can consider a bigger house. …" (the rehearsal gave
+  a similar one: "Tambura, Tubax" → "Tuba is string, Tuba is woodwind.") The format is right and the content is wrong. The model has learned the answer shape, but
   a 5M-parameter model trained on children's stories and about 10,700 instruction examples has little factual knowledge, and "Tambura" is rare.

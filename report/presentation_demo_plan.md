@@ -42,3 +42,19 @@ repository (generated earlier with the same commands); say that it is a recordin
 - [ ] Each member answers 5 questions from the others' viva files
 - [ ] Demo commands tested on a fresh Colab runtime
 - [ ] Numbers on slides re-checked against `results/metrics/`
+
+## Checked on the final checkpoints (2026-11-09, Colab T4)
+
+The demo commands ran on the real final checkpoints (`checkpoints/baseline_standard/best_checkpoint.pt` and `checkpoints/sft/best.pt`), taking about 15 s in total.
+Outputs at the settings above (temperature 0.8, top-k 50, seed 1234; beginnings only):
+
+| Prompt | Pre-trained | Fine-tuned (sampled) | Fine-tuned (greedy) |
+|---|---|---|---|
+| Story: "Once upon a time" | ", there was a little girl named Lily. She loved to play outside in the sun. …" | — | — |
+| List three things you need to bake a cake. | "Pearl is a big success. If you don't be so greedy or weak, …" | "Sop a cake cake is a cake with a cake cake. A cake is a cake that cooks over time. …" | "You should bake a cake with cake. You should bake a cake with cake. …" |
+| Identify which animal is a bird or a fish: sparrow, salmon | "Behildy, I can teach you how to move and play with others. …" | "Redalo is a fish" | "Redrow is a fish, farrow is a fish" |
+| Why do people drink water? | "\"We need to get to the dentist. He needs to make sure he will be healthy …" | "Both is made from water, water, water, water. …" | "People drink water is a drink in a water. It is a drink. It is a drink. …" |
+
+What to say: the pre-trained model turns every instruction into a children's story. After fine-tuning it answers in the right
+form and stays on topic, but the content is wrong or repeats, and greedy decoding loops. That is the main E2 finding, so
+show it rather than hide it. Use sampling for the live demo, and say that greedy outputs loop.
