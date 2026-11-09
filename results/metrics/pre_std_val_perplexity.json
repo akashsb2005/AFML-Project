@@ -1,0 +1,12 @@
+{
+  "mean_nll": 2.151486580000392,
+  "perplexity": 8.597629966605165,
+  "tokens_scored": 526015,
+  "stories": 2499,
+  "blocks": 2991,
+  "block_size": 256,
+  "label": "pre_std_val",
+  "ckpt": "/content/drive/MyDrive/afml-slm/final/checkpoints/baseline_standard/best_checkpoint.pt",
+  "data_file": "data/processed/tiny_stories_validation.jsonl",
+  "hardware": "Tesla T4"
+}

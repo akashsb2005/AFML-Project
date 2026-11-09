@@ -11,12 +11,23 @@ Source: `results/metrics/<run>_perplexity.json`, `<run>_train_log.csv`. Figure: 
 | Model | Params | Train tokens | Final train loss | Val loss | Val perplexity | Test perplexity | Training time |
 |---|---|---|---|---|---|---|---|
 | Uniform baseline (ln V) | — | — | — | ln 8000 = 8.987 | 8000 | 8000 | — |
-| Pre-trained, standard attention | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Pre-trained, standard attention | 5,273,088 | 56.6 M | 2.100 | 2.151 | 8.60 | 8.51 | 1,419 s |
 
-Interpretation: _TBD — does val loss track train loss? any overfitting? what do the samples at fixed
-checkpoints show?_
+Final run: TinyStories 50,000-story sample (53,668 training blocks of 256 tokens), 10,000 steps, batch 32, lr 3e-4
+(constant after 200 warm-up steps), seed 42, Tesla T4, commit f69db63. Train tokens count non-padding tokens. The table's
+val loss is the full validation split scored by `src/evaluate.py` (526,015 tokens). The training log's periodic val loss
+(2.139) uses a fixed subset.
 
-Sample generations (raw story prompts, greedy): _TBD, copied from `<run>_generations.jsonl`._
+Pre-training works: perplexity falls from 8,000 (uniform) to 8.6. Validation loss tracks training loss and was still
+falling at step 10,000 (2.43 at step 4,000, 2.26 at 6,500, 2.17 at 9,000, 2.14 at 10,000). The best checkpoint is the
+last one, so there is no sign of overfitting after about 6 passes over the sample. A longer run would probably go lower.
+
+Sample generation (greedy, `pre_std_story_generations.jsonl`), "Once there was a little fish named Sally." →
+"Sally was very curious and wanted to explore the world. One day, Sally decided to go on an adventure. She walked and
+walked until she came across a big, scary monster. The monster was very big and scary. Sally was scared and ran away.
+The monster was very friendly. …" The text is fluent and in TinyStories style but not always consistent: the monster is
+"scary" and then "very friendly". None of the 10 story continuations reached EOS within 64 tokens, and 4-gram repetition
+averaged 0.067.
 
 
 ### Provisional — Member 3 pipeline rehearsal (not the final runs)
@@ -44,10 +55,42 @@ the same decoding settings for both rows.
 
 | Model | Response NLL ↓ | Response ppl ↓ | Rubric total /8 ↑ | Relevance | Format | Answers | Coherence | EOS rate | Echo (3-gram copy) ↓ | Repetition ↓ |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Pre-trained | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| Fine-tuned (SFT) | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Pre-trained | 6.379 | 589 | pending | pending | pending | pending | pending | 0.33 | 0.000 | 0.256 |
+| Fine-tuned (SFT) | 3.928 | 50.8 | pending | pending | pending | pending | pending | 0.55 | 0.030 | 0.453 |
 
-Before/after examples: _TBD (3 prompts, both outputs verbatim)._
+Final run: standard attention; SFT from the pre-trained checkpoint above on Dolly train (13,317 examples, 2,620 skipped
+because the prompt does not fit), 4 epochs, batch 4, lr 3e-4, 10,700 steps, 305 s on a T4. Response NLL covers the full
+Dolly test split (591 scored examples, 51,075 response tokens; 150 skipped, 249 truncated). Generation statistics cover the
+60 fixed test prompts, decoded greedily with 128 new tokens. Rubric columns are **pending** the blind scoring of
+`rubric_sheet.csv`.
+
+The same 60 prompts with sampling (temperature 0.8, top-k 50, seed 1234; `*_sampled_generation_summary.json`):
+
+| Model | EOS rate | Repetition (4-gram) ↓ | Prompt copy (3-gram) | ROUGE-L vs reference | Outputs with repetition > 0.5 |
+|---|---|---|---|---|---|
+| Pre-trained, greedy | 0.33 | 0.256 | 0.000 | 0.078 | 11 / 60 |
+| SFT, greedy | 0.55 | 0.453 | 0.030 | 0.139 | 32 / 60 |
+| Pre-trained, sampled | 0.43 | 0.015 | 0.000 | 0.087 | 0 / 60 |
+| SFT, sampled | 0.90 | 0.035 | 0.034 | 0.159 | 1 / 60 |
+
+Fine-tuning works on the loss: response NLL falls from 6.38 to 3.93, so response perplexity falls from 589 to 51. SFT
+validation loss was still falling at the last step (4.98 at step 500, 4.08 at 7,000, 3.88 at 10,700). Outputs change from
+children's stories to answer-shaped text: they stop more often (EOS 0.33 → 0.55 greedy, 0.43 → 0.90 sampled) and overlap the
+references more (ROUGE-L 0.078 → 0.139). But greedy SFT outputs loop much more: 32 of 60 have 4-gram repetition above 0.5,
+against 11 before. Sampling removes almost all looping, but the content is usually wrong or garbled (examples below).
+
+Before/after examples (greedy unless stated, `pre_generations.jsonl`, `sft_generations.jsonl`, `sft_sampled_generations.jsonl`):
+
+* `dolly_test_00577` "What origins and destinations does Delta Vacations offer?"
+  Pre-trained: "Let's go to the beach and see the sea. It's so pretty and fun!" Mrs. Jones said … (story mode).
+  SFT: "Delta Vacations is a highly highly highly highly …" (on topic, then loops).
+* `dolly_test_00134` "Give me a list of pros and cons of buying a bigger house"
+  Pre-trained: "Quack, twice to the family, who is always here to help others. One day …"
+  SFT: "1. Compically, you can consider a bigger house. 2. Compically, you can consider a bigger house. 3. …"
+  (a numbered list, the right format, but one item repeated).
+* `dolly_test_00116` "Classify each of the following products as an Apple, Amazon, or Microsoft product: …"
+  Pre-trained: "40, 4, 40, 40, 40, …". SFT greedy: "Apple: Apple: Apple: …". SFT sampled: "Apple: Angeles: Amazon Chole, …"
+  (label format learned, assignments wrong).
 
 
 ### Provisional — pre-trained model only (no SFT checkpoint exists yet)
@@ -156,8 +199,22 @@ generated by `src/summarize_benchmarks.py`; figures `results/figures/bench_t4_*.
 
 | Variant | Params | Val ppl | Test ppl | Training time (same steps) |
 |---|---|---|---|---|
-| Standard (softmax) | 5,273,088 | TBD | TBD | TBD |
-| Linear (Katharopoulos et al.) | 5,273,088 | TBD | TBD | TBD |
+| Standard (softmax) | 5,273,088 | 8.60 | 8.51 | 1,419 s |
+| Linear (Katharopoulos et al.) | 5,273,088 | 8.89 | 8.78 | 3,319 s (2.34×) |
+
+Final runs: identical data, 10,000 steps, batch 32, lr 3e-4, seed 42, the same T4 session, commit f69db63 (sources:
+`pre_std_*_perplexity.json`, `pre_lin_*_perplexity.json`, `*_train_log.csv`). After the same SFT recipe on each:
+
+| Variant | SFT time | Dolly test response NLL ↓ | Response ppl ↓ | EOS rate (greedy) | Repetition (greedy) ↓ | ROUGE-L (greedy) |
+|---|---|---|---|---|---|---|
+| Standard | 305 s | 3.928 | 50.8 | 0.55 | 0.453 | 0.139 |
+| Linear | 532 s (1.74×) | 4.106 | 60.7 | 0.58 | 0.438 | 0.140 |
+
+At equal steps, linear attention ends with 3.1% higher test perplexity (8.78 vs 8.51) after taking 2.34× as long to train.
+It also ends with higher response NLL after SFT (4.11 vs 3.93). Both pre-training curves were still falling, and the gap
+narrowed from 9% in the 3,000-step rehearsal to 3% at 10,000 steps, so the gap at convergence is unknown. Story
+continuations look alike (4-gram repetition 0.067 standard vs 0.074 linear). One seed per variant. On this GPU, at
+context 256, standard attention is better on quality, time and memory.
 
 *Provisional rehearsal (same data, 3,000 identical steps, T4; `results/metrics/rehearsal/`):*
 
@@ -170,7 +227,7 @@ At an equal number of steps, linear attention reached a 9% higher validation per
 took 2.8× longer (consistent with the 0.35–0.40× throughput measured above). Both curves were
 still falling, so the gap at convergence is unknown; one seed only.
 
-Pending the matched training runs from Member 1 (after the fixes in the PR #2 review). Unavoidable differences
+Unavoidable differences
 between the two runs: linear attention has no attention-weight dropout (not defined for the linear form).
 
 ## E4 — Failure analysis
@@ -179,13 +236,16 @@ Source: `rubric_sheet.csv` notes column (final); provisional examples from `resu
 
 | Failure tag | Pre-trained | Fine-tuned | Example (prompt id) | Plausible cause |
 |---|---|---|---|---|
-| story-mode | all 6 inspected rehearsal outputs (of 60) are story text; full count TBD (rubric) | TBD | dolly_test_00104 "What is TESSA?" → "I'm sorry, I didn't mean to hurt you… The moral of the story is…" | pre-training data contains only children's stories; no instruction data yet |
-| loop | mean 4-gram repetition 0.38 on instructions | TBD | dolly_test_00607 (corporate rebrand) → "I'm glad you're welcome, …" ×10 (repetition 0.74) | greedy decoding of a small model; no repetition penalty |
-| loop (stories) | 0.70 on one opening | TBD | val_story_03 "Lily and Ben are friends. They" → "It is a big slide." ×8 | same |
-| echo | 0.00 prompt copy | TBD | — | — |
-| off-topic | TBD (rubric) | TBD | | |
-| truncated | 413/737 test examples exceed 128 tokens | TBD | | context length 128 |
-| factual-error | TBD (rubric) | TBD | | |
+| story-mode | count pending (rubric); every one of the 12 final outputs read so far is story text | none of the 12 read | dolly_test_00577 "What origins and destinations does Delta Vacations offer?" → "Let's go to the beach and see the sea…" | pre-training data contains only children's stories |
+| loop | 11 / 60 greedy outputs with 4-gram repetition > 0.5 | 32 / 60 greedy; 1 / 60 sampled | dolly_test_00482 "Give me some ideas around improving my writing skills" → "practice, practice, practice, …" | greedy decoding of a small model with no repetition penalty; SFT makes short answer phrases very likely |
+| echo | mean 3-gram prompt copy 0.000 | 0.030 greedy, 0.034 sampled | — | rare |
+| off-topic | count pending (rubric) | count pending (rubric) | | |
+| no EOS within 128 tokens | 40 / 60 greedy | 27 / 60 greedy; 6 / 60 sampled | | loops never end; sampling breaks them |
+| does not fit / truncated | 150 / 741 test prompts skipped, 249 responses cut at 256 tokens | same | | context length 256 |
+| factual-error | count pending (rubric) | most of the 12 sampled outputs read | dolly_test_00374 "Who is Richard Wayne Bogosian?" → "Brong Wayne is an American, politican's American diplomat in 199597…" | 5 M parameters and children's-story pre-training hold almost no world knowledge |
+
+The "read so far" counts come from the first 12 of the 60 prompts, read by Member 3 while preparing this file. They are
+not the blind rubric, which will replace them.
 
 Also observed: the tokenizer reproduces mis-encoded quotation marks present in the training text
 (`â€œ` instead of “), and several TinyStories validation stories share the same first six words
@@ -194,5 +254,11 @@ story-prompt set should use distinct openings.
 
 ## Limitations
 
-_TBD — at minimum: one random seed per configuration (unless repeated), 60 prompts with a single rater,
-small model and data budget, free-tier GPU timing noise, ROUGE-L is a weak proxy for instruction quality._
+* One random seed per configuration, and one rater for the 60 prompts.
+* A small model and data budget: 50,000 TinyStories stories and 10,000 steps, with both models still improving at the end.
+  The learning rate stays constant after warm-up, with no decay.
+* Free-tier GPU timing noise of about 1% across identical runs.
+* About 20% of Dolly prompts do not fit the 256-token context and are skipped, so long-context tasks are under-represented.
+* ROUGE-L is a weak proxy for instruction quality.
+* The tracked tokenizer may have been trained on a different TinyStories sample than this run's training split. This affects only
+  the tokenizer, not model training.

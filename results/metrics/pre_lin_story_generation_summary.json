@@ -1,0 +1,21 @@
+{
+  "n": 10,
+  "stopped_on_eos_rate": 0.0,
+  "mean_n_words": 65.0,
+  "mean_empty": 0.0,
+  "mean_distinct_1": 0.5196551541327661,
+  "mean_distinct_2": 0.790169939827198,
+  "mean_repetition_4gram": 0.0744739938765917,
+  "mean_prompt_copy_3gram": 0.003125,
+  "mean_new_tokens": 64.0,
+  "mean_latency_s": 0.3347606886998619,
+  "label": "pre_lin_story",
+  "ckpt": "/content/drive/MyDrive/afml-slm/final/checkpoints/efficient_linear/best_checkpoint.pt",
+  "prompts": "results/metrics/story_prompts.jsonl",
+  "decoding": {
+    "max_new_tokens": 64,
+    "temperature": 0.0,
+    "top_k": null,
+    "seed": 1234
+  }
+}

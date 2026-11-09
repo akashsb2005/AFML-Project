@@ -3,7 +3,8 @@
 **Team:** Akash Shivanand Bagoji (model and pre-training), Haneesh (data, tokenizer and fine-tuning),
 Samvith Vaddiparthi (evaluation, experiments and report)
 
-> **Draft.** Cells marked **TBD** wait for the final runs. The efficiency results in §5.3 are final measurements.
+> **Draft.** All numbers are from the final runs (Tesla T4, commit f69db63), except the rubric scores, which are **pending**
+> blind scoring.
 > Every number comes from `results/metrics/` or `experiments/experiment_log.csv`. The detailed tables are in
 > `report/results.md`.
 
@@ -14,7 +15,9 @@ TinyStories, and fine-tuned it on Databricks Dolly 15K with a response-only loss
 attention with the causal linear attention of Katharopoulos et al. On a Tesla T4, linear attention was slower and
 used more memory at every sequence length we measured (128–2048): 0.35–0.40× the training throughput and 2.2–2.5×
 the peak training memory of standard attention. Its forward time did scale linearly, and the latency gap shrank
-from 2.52× at 128 tokens to 1.08× at 2048. **TBD: final perplexity and fine-tuning results.**
+from 2.52× at 128 tokens to 1.08× at 2048. After 10,000 steps, the standard model reached test perplexity 8.51,
+against 8.78 for linear attention, which took 2.34× as long to train. Fine-tuning cut Dolly test response NLL from 6.38
+to 3.93. Outputs became answer-shaped but rarely correct, and greedy decoding looped more often after fine-tuning.
 
 ## 1. Introduction
 
@@ -59,7 +62,8 @@ removes 203 rows and leaves 13,317 / 739 / 741 examples with no prompt in two sp
 `Instruction: …\n[Context: …\n]Response:`.
 
 At a 256-token context, prompts that do not fit are skipped (2,620 of 13,317 train and 150 of 741 test examples)
-and over-long responses are cut at the tail. **TBD: final TinyStories subset size, confirmed by Member 2.**
+and over-long responses are cut at the tail. Pre-training uses a 50,000-story TinyStories sample, which gives 53,668
+training blocks of 256 tokens, plus validation and test splits of about 2,500 stories each.
 
 ### 3.2 Model
 
@@ -71,8 +75,9 @@ parameters, and it has no attention-weight dropout because there are no attentio
 ### 3.3 Training
 
 Pre-training uses AdamW, lr 3×10⁻⁴, weight decay 0.1, 200 warm-up steps, batch 32 and context 256, with `src/training.py`
-shared by both variants. Fine-tuning continues from the pre-trained checkpoint with AdamW. **TBD: final step counts
-and the fine-tuning learning rate.**
+shared by both variants. Both variants train for 10,000 steps, about 6 passes over the sample, with a constant learning rate after
+warm-up. Fine-tuning continues from each pre-trained checkpoint with AdamW, lr 3×10⁻⁴, batch 4 and 4 epochs (10,700
+steps). We chose these settings on Dolly validation in a rehearsal, comparing lr 2×10⁻⁵, 10⁻⁴ and 3×10⁻⁴ (§5.2).
 
 ### 3.4 Evaluation
 
@@ -100,21 +105,23 @@ with the result. Every run is logged in `experiments/experiment_log.csv`. Figure
 | Model | Train tokens | Val loss | Val perplexity | Test perplexity | Training time |
 |---|---|---|---|---|---|
 | Uniform baseline | — | 8.987 | 8,000 | 8,000 | — |
-| Standard attention | TBD | TBD | TBD | TBD | TBD |
+| Standard attention | 56.6 M | 2.151 | 8.60 | 8.51 | 1,419 s |
 
-A shorter rehearsal (3,000 steps, context 128, not a final result) reached validation perplexity 15.42, with validation
-loss still falling, so the pipeline clearly learns.
+Validation loss tracked training loss and was still falling at step 10,000 (2.43 at step 4,000, 2.17 at 9,000), so
+there was no overfitting, and a longer run would probably go lower. Story continuations are fluent TinyStories text but
+not always consistent. For example, a monster is "big and scary" and then "very friendly" in the next sentence.
 
 ### 5.2 E2: instruction fine-tuning
 
 | Model | Response NLL | Rubric /8 | EOS rate | Prompt copy | Repetition |
 |---|---|---|---|---|---|
-| Pre-trained | TBD | TBD | TBD | TBD | TBD |
-| Fine-tuned | TBD | TBD | TBD | TBD | TBD |
+| Pre-trained | 6.379 | pending | 0.33 | 0.000 | 0.256 |
+| Fine-tuned | 3.928 | pending | 0.55 | 0.030 | 0.453 |
 
-A rehearsal on Dolly validation (not a final result; `results/metrics/rehearsal_sft/`) gave response NLL 6.96 before
-fine-tuning and 4.18 after 4 epochs at lr 3×10⁻⁴. Greedy 4-gram repetition rose from 0.27 to 0.65 on the same 60 prompts,
-while sampling (temperature 0.8, top-k 50) brought it to 0.02.
+Response NLL is on the full Dolly test split (591 scored examples). The other columns cover 60 fixed test prompts
+decoded greedily. With sampling (temperature 0.8, top-k 50), the fine-tuned model stopped on EOS in 90% of outputs
+with 4-gram repetition 0.035. Validation loss was still falling at the last SFT step. In the rehearsal, lr 3×10⁻⁴
+beat 10⁻⁴ and 2×10⁻⁵ on Dolly validation (4.64 vs 4.84 and 5.34 after one epoch), so we used it for the final runs.
 
 ### 5.3 E3: standard vs linear attention
 
@@ -141,12 +148,26 @@ Over 4 identical runs at batch 8 × 128, standard attention gave 68,325 ± 903 t
 
 | Variant | Params | Val perplexity | Test perplexity | Training time |
 |---|---|---|---|---|
-| Standard | 5,273,088 | TBD | TBD | TBD |
-| Linear | 5,273,088 | TBD | TBD | TBD |
+| Standard | 5,273,088 | 8.60 | 8.51 | 1,419 s |
+| Linear | 5,273,088 | 8.89 | 8.78 | 3,319 s |
+
+After the same fine-tuning, the linear model's Dolly test response NLL was 4.11, against 3.93 for standard attention.
+Fine-tuning took 532 s, against 305 s.
 
 ### 5.4 E4: failure analysis
 
-**TBD: tag counts from the rubric sheet (story-mode, loop, echo, off-topic, truncated, factual error) with real examples.**
+Counts of off-topic and factually wrong answers wait for the blind rubric. The automatic counts on the 60 prompts are:
+
+* **Story mode (pre-trained).** The pre-trained model answers instructions with children's stories. For example,
+  "What origins and destinations does Delta Vacations offer?" → "Let's go to the beach and see the sea…".
+* **Loops.** 11 of 60 greedy outputs before fine-tuning and 32 of 60 after have 4-gram repetition above 0.5, e.g.
+  "Give me some ideas around improving my writing skills" → "practice, practice, practice, …". With sampling, 1 of 60
+  loops.
+* **Right format, wrong content.** The fine-tuned model learns the shape of an answer: numbered lists, "Apple: …" labels
+  for classification, "X is an American …" for biographies. The content is usually wrong.
+* **Garbled facts.** "Who is Richard Wayne Bogosian?" → "Brong Wayne is an American, politican's American diplomat in
+  199597…". A 5 M-parameter model pre-trained on children's stories holds almost no world knowledge.
+* **Context.** 150 of 741 test prompts do not fit in 256 tokens, and 249 responses are cut.
 
 ## 6. Discussion
 
@@ -160,7 +181,14 @@ At our context length of 256, standard attention is the better choice on this GP
 **Lower loss did not automatically give better answers.** In the rehearsal, fine-tuning moved outputs from story text to answer-shaped text and
 lowered response loss, but greedy decoding looped more. The final rubric decides whether answers actually improved.
 
-**TBD: what the perplexity gap adds to this, and whether fine-tuning improved response NLL and rubric scores together.**
+**Linear attention also cost a little quality.** At equal steps, it ended with 3.1% higher test perplexity and higher
+response NLL after fine-tuning. The gap narrowed from 9% at 3,000 rehearsal steps to 3% at 10,000. Both curves were still falling, so it may close
+further. At this scale it did not save time either way.
+
+**Fine-tuning changed the form of the output more than its content.** Response NLL fell sharply, EOS and ROUGE-L rose, and
+outputs switched from stories to answer-shaped text. With greedy decoding, though, most fine-tuned outputs loop. With sampling
+they terminate but are usually factually wrong. The rubric will show how much of the NLL gain reaches the human-judged
+scores.
 
 ## 7. Limitations
 
@@ -174,8 +202,10 @@ lowered response loss, but greedy decoding looped more. The final rubric decides
 
 ## 8. Conclusion
 
-**TBD after the final runs.** So far: linear attention scales as predicted, but costs more than standard attention at
-every length we measured, and at our context length it costs well over twice as much in both time and memory.
+Pre-training from scratch worked: test perplexity fell from 8,000 to 8.5 in 24 minutes on a T4. Instruction fine-tuning
+lowered response loss and taught answer formats, but a 5 M-parameter model cannot supply the content, and greedy decoding
+loops. Linear attention scales as theory predicts, but at our sizes it was slower, used more memory and reached slightly
+worse perplexity. At a 256-token context, standard attention is the better choice.
 
 ## Individual contributions
 
