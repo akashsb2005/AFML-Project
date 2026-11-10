@@ -6,7 +6,7 @@
 
 ## E1 — Does pre-training work?
 
-Source: `results/metrics/<run>_perplexity.json`, `<run>_train_log.csv`. Figure: `results/figures/pretrain_loss.png`.
+Source: `results/metrics/<run>_perplexity.json`, `<run>_train_log.csv`. Figures: `results/figures/pretrain_loss.png`, `pretrain_val_loss.png` (validation only), `sft_loss.png`.
 
 | Model | Params | Train tokens | Final train loss | Val loss | Val perplexity | Test perplexity | Training time |
 |---|---|---|---|---|---|---|---|

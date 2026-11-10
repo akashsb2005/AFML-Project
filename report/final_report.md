@@ -108,7 +108,7 @@ with the result. Every run is logged in `experiments/experiment_log.csv`. Figure
 | Standard attention | 56.6 M | 2.151 | 8.60 | 8.51 | 1,419 s |
 
 Validation loss tracked training loss and was still falling at step 10,000 (2.43 at step 4,000, 2.17 at 9,000), so
-there was no overfitting, and a longer run would probably go lower. Story continuations are fluent TinyStories text but
+there was no overfitting, and a longer run would probably go lower (Figure 1). Story continuations are fluent TinyStories text but
 not always consistent. For example, a monster is "big and scary" and then "very friendly" in the next sentence.
 
 ### 5.2 E2: instruction fine-tuning
@@ -118,7 +118,7 @@ not always consistent. For example, a monster is "big and scary" and then "very 
 | Pre-trained | 6.379 | pending | 0.33 | 0.000 | 0.256 |
 | Fine-tuned | 3.928 | pending | 0.55 | 0.030 | 0.453 |
 
-Response NLL is on the full Dolly test split (591 scored examples). The other columns cover 60 fixed test prompts
+Response NLL is on the full Dolly test split (591 scored examples). Figure 2 shows the fine-tuning curves. The other columns cover 60 fixed test prompts
 decoded greedily. With sampling (temperature 0.8, top-k 50), the fine-tuned model stopped on EOS in 90% of outputs
 with 4-gram repetition 0.035. Validation loss was still falling at the last SFT step. In the rehearsal, lr 3×10⁻⁴
 beat 10⁻⁴ and 2×10⁻⁵ on Dolly validation (4.64 vs 4.84 and 5.34 after one epoch), so we used it for the final runs.
@@ -144,7 +144,7 @@ Measured on a Colab Tesla T4 (15 GB, PyTorch 2.11.0).
 
 Over 4 identical runs at batch 8 × 128, standard attention gave 68,325 ± 903 tokens/s and linear attention
 27,094 ± 226, so the difference is far larger than run-to-run noise. Generation took 3.43 ms/token (standard) and
-4.05 ms/token (linear).
+4.05 ms/token (linear). Figure 3 plots the forward-time sweep.
 
 | Variant | Params | Val perplexity | Test perplexity | Training time |
 |---|---|---|---|---|
@@ -168,6 +168,14 @@ Counts of off-topic and factually wrong answers wait for the blind rubric. The a
 * **Garbled facts.** "Who is Richard Wayne Bogosian?" → "Brong Wayne is an American, politican's American diplomat in
   199597…". A 5 M-parameter model pre-trained on children's stories holds almost no world knowledge.
 * **Context.** 150 of 741 test prompts do not fit in 256 tokens, and 249 responses are cut.
+
+### Figures
+
+* **Figure 1.** Pre-training validation loss, standard vs linear attention (`results/figures/pretrain_val_loss.png`;
+  training curves too in `pretrain_loss.png`).
+* **Figure 2.** Fine-tuning loss on response tokens, both variants (`results/figures/sft_loss.png`).
+* **Figure 3.** Forward latency and memory vs sequence length on the T4 (`results/figures/bench_t4_forward_latency.png`,
+  `bench_t4_forward_memory.png`); training throughput in `bench_t4_train_throughput.png`.
 
 ## 6. Discussion
 

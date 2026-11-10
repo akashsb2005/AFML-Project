@@ -58,21 +58,27 @@ def read_train_log(path):
     return steps, train, val_x, val
 
 
-def plot_loss(logs, labels, out, title="Pre-training loss"):
-    """Training (thin, light) and validation (solid, markers) loss vs tokens seen; one colour per run."""
+def plot_loss(logs, labels, out, title="Pre-training loss", val_only=False):
+    """Training (thin, light) and validation (solid, markers) loss vs tokens seen; one colour per run.
+    val_only drops the training curves so close validation curves can be told apart."""
     fig, ax = plt.subplots(figsize=(7, 4.2))
     use_tokens = True
+    ends = []
     for i, (path, label) in enumerate(zip(logs, labels)):
         x, tr, vx, va = read_train_log(path)
         with open(path) as fh:
             use_tokens &= "tokens_seen" in (csv.DictReader(fh).fieldnames or [])
         c = SERIES[i]
-        if tr:
+        if tr and not val_only:
             ax.plot(x, tr, color=c, linewidth=1, alpha=0.35, label=f"{label} — train")
         if va:
             ax.plot(vx, va, color=c, linewidth=2, marker="o", markersize=4, label=f"{label} — validation")
-            ax.annotate(f"{va[-1]:.3f}", (vx[-1], va[-1]), xytext=(6, 0), textcoords="offset points",
-                        va="center", fontsize=9, color=INK)
+            ends.append((va[-1], vx[-1]))
+    # end labels of several runs sit close together: spread them vertically, lowest curve lowest
+    for rank, (v, xe) in enumerate(sorted(ends)):
+        dy = (rank - (len(ends) - 1) / 2) * 14
+        ax.annotate(f"{v:.3f}", (xe, v), xytext=(6, dy), textcoords="offset points",
+                    va="center", fontsize=9, color=INK)
     _style(ax, title, "tokens seen" if use_tokens else "step", "cross-entropy loss (nats / token)")
     ax.legend(frameon=False, fontsize=9)
     _save(fig, out)
@@ -159,6 +165,7 @@ def main(argv=None):
     p.add_argument("--logs", nargs="+", required=True)
     p.add_argument("--labels", nargs="+", required=True)
     p.add_argument("--title", default="Pre-training loss")
+    p.add_argument("--val-only", action="store_true", help="validation curves only")
     p.add_argument("--out", required=True)
     p = sub.add_parser("bench")
     p.add_argument("--bench", required=True)
@@ -172,7 +179,7 @@ def main(argv=None):
     p.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     if a.cmd == "loss":
-        plot_loss(a.logs, a.labels, a.out, a.title)
+        plot_loss(a.logs, a.labels, a.out, a.title, a.val_only)
     elif a.cmd == "bench":
         plot_benchmark(a.bench, a.out_prefix)
     else:

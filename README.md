@@ -11,6 +11,20 @@ fine-tuned on Databricks Dolly 15K, and compared with an efficient (linear) atte
 
 Interfaces between the parts: **`docs/interfaces.md`**. Member 2's detailed workflow is in **`docs/member2_data_sft.md`**.
 
+## Final results (Tesla T4, 10,000 pre-training steps, seed 42)
+
+| | Standard attention | Linear attention |
+|---|---|---|
+| Test perplexity (uniform = 8,000) | **8.51** | 8.78 |
+| Pre-training time | 1,419 s | 3,319 s |
+| Dolly test response NLL after fine-tuning (6.38 before) | **3.93** | 4.11 |
+| Training throughput, batch 32 × 256 | 79,198 tokens/s | 29,471 tokens/s |
+
+Details: `report/results.md`; write-up: `report/final_report.md`; every run: `experiments/experiment_log.csv`.
+
+**Reproduce:** open `notebooks/final_runs.ipynb` in Colab with a T4 GPU and run all cells (about 1.5 h). It calls
+`scripts/run_final.sh`, which saves everything to Google Drive and resumes where it stopped after a disconnect.
+
 ## Setup
 
 ```bash

@@ -60,7 +60,11 @@ instructions() {  # instructions LABEL CHECKPOINT
 figures() {
     python src/make_figures.py loss --logs "$M/baseline_standard_train_log.csv" "$M/efficient_linear_train_log.csv" \
         --labels "Standard attention" "Linear attention" --out results/figures/pretrain_loss.png
-    python src/make_figures.py loss --logs "$M/sft_train_log.csv" --labels "Fine-tuning" \
+    python src/make_figures.py loss --logs "$M/baseline_standard_train_log.csv" "$M/efficient_linear_train_log.csv" \
+        --labels "Standard attention" "Linear attention" --val-only --title "Pre-training validation loss" \
+        --out results/figures/pretrain_val_loss.png
+    python src/make_figures.py loss --logs "$M/sft_train_log.csv" "$M/sft_linear_train_log.csv" \
+        --labels "Standard attention" "Linear attention" \
         --title "Instruction fine-tuning loss (response tokens only)" --out results/figures/sft_loss.png
 }
 
