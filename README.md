@@ -5,11 +5,11 @@ fine-tuned on Databricks Dolly 15K, and compared with an efficient (linear) atte
 
 | Member | Role | Owns |
 |---|---|---|
-| Akash | Member 1 — model & pre-training | `src/model.py`, `src/attention.py`, `src/pretrain.py`, `src/generate.py` |
+| Akash | Member 1 — model & pre-training | `src/model.py`, `src/attention.py`, `src/efficient_model.py`, `src/efficient_attention.py`, `src/training.py`, `src/pretrain.py`, `src/pretrain_efficient.py`, `configs/` |
 | Haneesh | Member 2 — data, tokenizer & SFT | `src/tokenizer.py`, `src/dataset.py`, `src/preprocess.py`, `src/sft.py` |
 | Samvith | Member 3 — evaluation, experiments & report | `src/evaluate.py`, `src/benchmark.py`, `src/model_api.py`, `src/select_eval_prompts.py`, `src/make_figures.py`, `src/log_experiment.py`, `experiments/`, `results/`, `report/` |
 
-Interfaces between the parts: **`docs/interfaces.md`**. Member 2's detailed workflow is in **`docs/member2_data_sft.md`**.
+Interfaces between the parts: **`docs/interfaces.md`**. Member 1 implementation record: **`docs/member1_implementation.md`** and viva guide: **`report/viva_member1.md`**. Member 2's detailed workflow is in **`docs/member2_data_sft.md`**.
 
 ## Final results (Tesla T4, 10,000 pre-training steps, seed 42)
 
