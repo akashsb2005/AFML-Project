@@ -53,3 +53,12 @@ SFT uses Member 1's pretraining checkpoint and defaults to a 256-token context. 
 
 Protocol: `report/evaluation_protocol.md` · rubric: `report/instruction_rubric.md` · results:
 `report/results.md` · references: `report/references.md`.
+
+
+## Submission status
+
+- Automated verification on the merged `main` branch: **67 tests passed** locally (Python 3.11.9, Windows).
+- Dependency verification: `python -m pip check` reported **No broken requirements found**.
+- Final experiment metrics and report tables are committed under `results/metrics/` and `report/`.
+- **Still required before claiming a fully completed submission:** independent blind scoring of all 120 rows in `results/metrics/rubric_sheet.csv`, insertion of the resulting aggregated scores and failure tags into the report, and team review/rehearsal of the presentation.
+- Do not report blank rubric fields as zero or invent human-evaluation results. The existing rubric key must remain unopened until blind scoring is complete.
