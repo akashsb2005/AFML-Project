@@ -3,10 +3,8 @@
 **Team:** Akash Shivanand Bagoji (model and pre-training), Haneesh (data, tokenizer and fine-tuning),
 Samvith Vaddiparthi (evaluation, experiments and report)
 
-> **Draft.** All numbers are from the final runs (Tesla T4, commit f69db63), except the rubric scores, which are **pending**
-> blind scoring.
-> Every number comes from `results/metrics/` or `experiments/experiment_log.csv`. The detailed tables are in
-> `report/results.md`.
+> **Technical report status: results documented; human rubric evaluation pending.** All experimental numbers are from the final runs (Tesla T4, commit f69db63). The rubric score fields remain blank pending independent blind scoring; no human scores are claimed here.
+> Every reported number comes from `results/metrics/` or `experiments/experiment_log.csv`. Detailed tables are in `report/results.md`.
 
 ## Abstract
 
@@ -156,7 +154,7 @@ Fine-tuning took 532 s, against 305 s.
 
 ### 5.4 E4: failure analysis
 
-Counts of off-topic and factually wrong answers wait for the blind rubric. The automatic counts on the 60 prompts are:
+Human-coded counts of off-topic and factually wrong answers remain pending the blind rubric. The following are automatic generation statistics on the 60 prompts:
 
 * **Story mode (pre-trained).** The pre-trained model answers instructions with children's stories. For example,
   "What origins and destinations does Delta Vacations offer?" → "Let's go to the beach and see the sea…".
