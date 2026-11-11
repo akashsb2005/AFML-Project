@@ -130,7 +130,7 @@ def bench_generation(model, cfg, device, prompt_len, new_tokens, repeats, seed):
 
 def run(config_paths, label, device_name="auto", batch_size=16, train_seq_len=None, seq_lens=None,
         warmup=3, steps=10, repeats=10, gen_prompt_len=32, gen_new_tokens=64, seed=0,
-        builder="src.model:build_model", out_dir="results/metrics", overrides=None) -> dict:
+        builder="auto", out_dir="results/metrics", overrides=None) -> dict:
     device = model_api.pick_device(device_name)
     results = {"label": label, "hardware": model_api.hardware_string(device), "torch": torch.__version__,
                "batch_size": batch_size, "seed": seed, "overrides": overrides or {}, "variants": {}}
@@ -186,7 +186,7 @@ def main(argv=None):
     ap.add_argument("--gen-prompt-len", type=int, default=32)
     ap.add_argument("--gen-new-tokens", type=int, default=64)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--builder", default="src.model:build_model")
+    ap.add_argument("--builder", default="auto")
     ap.add_argument("--override", nargs="*", default=[],
                     help="e.g. context_length=2048 (applied to all variants, for the sequence-length sweep)")
     a = ap.parse_args(argv)

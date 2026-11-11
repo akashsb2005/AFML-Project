@@ -1,0 +1,22 @@
+{
+  "n": 60,
+  "stopped_on_eos_rate": 0.9,
+  "mean_n_words": 36.75,
+  "mean_empty": 0.0,
+  "mean_distinct_1": 0.6713693522482946,
+  "mean_distinct_2": 0.8568865913825489,
+  "mean_repetition_4gram": 0.035113872943019965,
+  "mean_prompt_copy_3gram": 0.034303787284393934,
+  "mean_rougeL_f1_vs_reference": 0.15930329427386028,
+  "mean_new_tokens": 55.4,
+  "mean_latency_s": 0.2557337543500277,
+  "label": "sft_sampled",
+  "ckpt": "/content/drive/MyDrive/afml-slm/final/checkpoints/sft/best.pt",
+  "prompts": "results/metrics/eval_prompts.jsonl",
+  "decoding": {
+    "max_new_tokens": 128,
+    "temperature": 0.8,
+    "top_k": 50,
+    "seed": 1234
+  }
+}

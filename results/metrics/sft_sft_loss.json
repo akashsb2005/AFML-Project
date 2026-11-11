@@ -1,0 +1,13 @@
+{
+  "mean_response_nll": 3.9284484719809982,
+  "response_perplexity": 50.82805530794446,
+  "response_tokens": 51075,
+  "examples": 741,
+  "truncated": 249,
+  "skipped_no_response_tokens": 150,
+  "example_builder": "DollySFTDataset rules",
+  "label": "sft",
+  "ckpt": "/content/drive/MyDrive/afml-slm/final/checkpoints/sft/best.pt",
+  "data": "data/processed/dolly_test.jsonl",
+  "excluded_overlapping_prompts": 0
+}

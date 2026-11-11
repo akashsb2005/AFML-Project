@@ -2,7 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from efficient_attention import LinearCausalSelfAttention
+try:
+    from .efficient_attention import LinearCausalSelfAttention
+except ImportError:  # Support direct execution with src/ on sys.path.
+    from efficient_attention import LinearCausalSelfAttention
 
 
 class EfficientTransformerBlock(nn.Module):
@@ -121,10 +124,13 @@ class EfficientSmallLanguageModel(nn.Module):
         loss = None
 
         if targets is not None:
+            if targets.shape != input_ids.shape:
+                raise ValueError("targets must match input_ids shape")
             loss = F.cross_entropy(
                 logits.reshape(-1, self.vocab_size),
                 targets.reshape(-1),
                 ignore_index=-100
             )
 
-        return logits, loss
+        # Evaluation and generation APIs consume logits when no targets are supplied.
+        return (logits, loss) if targets is not None else logits

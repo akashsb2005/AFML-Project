@@ -48,30 +48,37 @@ def read_train_log(path):
     with open(path) as fh:
         for r in csv.DictReader(fh):
             x = float(r.get("tokens_seen") or r["step"])
+            val_value = r.get("val_loss") or r.get("validation_loss")   # Member 1 logs "validation_loss"
             if r.get("train_loss"):
                 steps.append(x)
                 train.append(float(r["train_loss"]))
-            if r.get("val_loss"):
+            if val_value:
                 val_x.append(x)
-                val.append(float(r["val_loss"]))
+                val.append(float(val_value))
     return steps, train, val_x, val
 
 
-def plot_loss(logs, labels, out, title="Pre-training loss"):
-    """Training (thin, light) and validation (solid, markers) loss vs tokens seen; one colour per run."""
+def plot_loss(logs, labels, out, title="Pre-training loss", val_only=False):
+    """Training (thin, light) and validation (solid, markers) loss vs tokens seen; one colour per run.
+    val_only drops the training curves so close validation curves can be told apart."""
     fig, ax = plt.subplots(figsize=(7, 4.2))
     use_tokens = True
+    ends = []
     for i, (path, label) in enumerate(zip(logs, labels)):
         x, tr, vx, va = read_train_log(path)
         with open(path) as fh:
             use_tokens &= "tokens_seen" in (csv.DictReader(fh).fieldnames or [])
         c = SERIES[i]
-        if tr:
+        if tr and not val_only:
             ax.plot(x, tr, color=c, linewidth=1, alpha=0.35, label=f"{label} — train")
         if va:
             ax.plot(vx, va, color=c, linewidth=2, marker="o", markersize=4, label=f"{label} — validation")
-            ax.annotate(f"{va[-1]:.3f}", (vx[-1], va[-1]), xytext=(6, 0), textcoords="offset points",
-                        va="center", fontsize=9, color=INK)
+            ends.append((va[-1], vx[-1]))
+    # end labels of several runs sit close together: spread them vertically, lowest curve lowest
+    for rank, (v, xe) in enumerate(sorted(ends)):
+        dy = (rank - (len(ends) - 1) / 2) * 14
+        ax.annotate(f"{v:.3f}", (xe, v), xytext=(6, dy), textcoords="offset points",
+                    va="center", fontsize=9, color=INK)
     _style(ax, title, "tokens seen" if use_tokens else "step", "cross-entropy loss (nats / token)")
     ax.legend(frameon=False, fontsize=9)
     _save(fig, out)
@@ -87,7 +94,7 @@ def plot_benchmark(bench_json, out_prefix):
     for metric, ylabel, fname in [("forward_ms_median", "forward latency (ms, median)", "forward_latency"),
                                   ("forward_peak_mem_mb", "peak GPU memory (MB)", "forward_memory")]:
         fig, ax = plt.subplots(figsize=(7, 4.2))
-        plotted = False
+        plotted, ends = False, []
         for i, n in enumerate(names):
             pts = sorted((int(T), f[metric]) for T, f in variants[n]["forward"].items() if f.get(metric) is not None)
             if not pts:
@@ -95,9 +102,14 @@ def plot_benchmark(bench_json, out_prefix):
             xs, ys = zip(*pts)
             label = variants[n].get("attention") or n
             ax.plot(xs, ys, color=SERIES[i], linewidth=2, marker="o", markersize=5, label=label)
-            ax.annotate(label, (xs[-1], ys[-1]), xytext=(6, 0), textcoords="offset points", va="center",
-                        fontsize=9, color=INK)
+            ends.append((ys[-1], xs[-1], label))
             plotted = True
+        # direct end labels; pull apart labels whose end points nearly coincide (log axis -> compare ratios)
+        ends.sort()
+        for j, (y, x, label) in enumerate(ends):
+            close = len(ends) > 1 and any(abs(y / o[0] - 1) < 0.25 for k, o in enumerate(ends) if k != j)
+            dy = (-7 if j == 0 else 7) if close else 0
+            ax.annotate(label, (x, y), xytext=(6, dy), textcoords="offset points", va="center", fontsize=9, color=INK)
         if not plotted:
             plt.close(fig)
             continue
@@ -105,7 +117,8 @@ def plot_benchmark(bench_json, out_prefix):
         all_T = sorted({int(T) for n in names for T in variants[n]["forward"]})
         ax.set_xticks(all_T, [str(T) for T in all_T])
         ax.set_yscale("log")
-        _style(ax, f"{ylabel.split(' (')[0].capitalize()} vs sequence length — batch {res['batch_size']}, {hw}",
+        title = ylabel.split(" (")[0]
+        _style(ax, f"{title[0].upper() + title[1:]} vs sequence length — batch {res['batch_size']}, {hw}",
                "sequence length (tokens, log scale)", ylabel + " — log scale")
         ax.legend(frameon=False, fontsize=9)
         _save(fig, f"{out_prefix}_{fname}.png")
@@ -152,6 +165,7 @@ def main(argv=None):
     p.add_argument("--logs", nargs="+", required=True)
     p.add_argument("--labels", nargs="+", required=True)
     p.add_argument("--title", default="Pre-training loss")
+    p.add_argument("--val-only", action="store_true", help="validation curves only")
     p.add_argument("--out", required=True)
     p = sub.add_parser("bench")
     p.add_argument("--bench", required=True)
@@ -165,7 +179,7 @@ def main(argv=None):
     p.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     if a.cmd == "loss":
-        plot_loss(a.logs, a.labels, a.out, a.title)
+        plot_loss(a.logs, a.labels, a.out, a.title, a.val_only)
     elif a.cmd == "bench":
         plot_benchmark(a.bench, a.out_prefix)
     else:

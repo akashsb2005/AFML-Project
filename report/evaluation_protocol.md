@@ -15,8 +15,9 @@ Any later change must be recorded in the change log at the bottom, with the reas
 ## 2. Data splits
 
 All splits are produced by Member 2's `src/preprocess.py` (seed 42, 90/5/5) into `data/processed/`;
-statistics in `tiny_stories_stats.json` and `dolly_stats.json`. TinyStories: 9,000 / 500 / 500 stories;
-Dolly: 13,500 / 750 / 750 examples.
+statistics in `tiny_stories_stats.json` and `dolly_stats.json`. Dolly: 13,317 / 739 / 741 examples after
+removing duplicate prompts. The TinyStories split sizes are the ones in `tiny_stories_stats.json` for the
+final runs.
 
 | Split | Used for | Never used for |
 |---|---|---|
@@ -27,10 +28,10 @@ Dolly: 13,500 / 750 / 750 examples.
 | Dolly validation | SFT val loss, early stopping | final reporting |
 | Dolly test | response NLL and the fixed evaluation prompts (E2, E4) | training, selection, prompt tuning |
 
-Dolly itself contains duplicated prompts (143 prompts occur more than once, 346 rows), so a random split
-puts some copies on both sides: 13 Dolly-test prompts also occur in train/validation (3 with an identical
-response). Until Member 2 splits by prompt, `select_eval_prompts.py` and `evaluate.py sft-loss --exclude`
-drop these 13 rows and report the count.
+Dolly prompts are whitespace- and case-normalised and deduplicated before splitting (203 rows removed), so no
+prompt occurs in two splits. `select_eval_prompts.py --strict` and `evaluate.py sft-loss --exclude` still check
+this. At a 256-token context, examples whose prompt does not fit are skipped (150 of 741 in the test split), and
+longer responses are cut at the tail; both are counted in the output and reported as a limitation.
 
 ## 3. Metrics
 
@@ -64,8 +65,9 @@ latency for a [16, T] batch at T ∈ {128, 256, 512, 1024, 2048}; autoregressive
   long context passages (closed QA, information extraction, summarization) are under-represented; this
   is reported as a limitation.
 * Both the pre-trained and the fine-tuned checkpoint get the **same prompt text in the same SFT template**.
-  The pre-trained model is additionally probed with 10 raw TinyStories-style openings (`--raw`) so that
-  its genuine ability (story continuation) is also shown.
+  The pre-trained model is additionally probed with 10 raw openings from TinyStories validation stories,
+  all with distinct first words (`results/metrics/story_prompts.jsonl`, `--raw`), so that its genuine ability
+  (story continuation) is also shown.
 
 ## 5. Controlled attention comparison (E3)
 
@@ -113,3 +115,4 @@ rater) are stated as a limitation.
 |---|---|---|
 | 2026-10-24 | v1 drafted | |
 | 2026-10-26 | data paths, per-story perplexity, Dolly duplicate handling | adapted to Member 2's implemented pipeline |
+| 2026-11-04 | Dolly splits and skip rule from the deduplicated data, story probes with distinct openings, checkpoint paths | Member 2's PR #5 deduplicates before splitting; the old story openings gave identical greedy continuations |

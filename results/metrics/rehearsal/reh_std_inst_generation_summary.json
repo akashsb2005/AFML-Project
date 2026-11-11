@@ -1,0 +1,21 @@
+{
+  "n": 60,
+  "stopped_on_eos_rate": 0.5,
+  "mean_n_words": 64.75,
+  "mean_empty": 0,
+  "mean_distinct_1": 0.37749205892067267,
+  "mean_distinct_2": 0.5198188183808568,
+  "mean_repetition_4gram": 0.37842111082306745,
+  "mean_prompt_copy_3gram": 0,
+  "mean_rougeL_f1_vs_reference": 0.08576360936783099,
+  "mean_new_tokens": 55.9,
+  "mean_latency_s": 0.19344654945000078,
+  "label": "reh_std_inst",
+  "prompts": "results/metrics/eval_prompts.jsonl",
+  "decoding": {
+    "max_new_tokens": 64,
+    "temperature": 0.0,
+    "top_k": null,
+    "seed": 1234
+  }
+}

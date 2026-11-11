@@ -1,0 +1,22 @@
+{
+  "n": 60,
+  "stopped_on_eos_rate": 0.4,
+  "mean_n_words": 98.36666666666666,
+  "mean_empty": 0.0,
+  "mean_distinct_1": 0.4106495730170245,
+  "mean_distinct_2": 0.580261782582867,
+  "mean_repetition_4gram": 0.27197072756510615,
+  "mean_prompt_copy_3gram": 0.0,
+  "mean_rougeL_f1_vs_reference": 0.08437594652968508,
+  "mean_new_tokens": 106.58333333333333,
+  "mean_latency_s": 1.3398316132333397,
+  "label": "reh2_pre",
+  "ckpt": "pre/best_checkpoint.pt",
+  "prompts": "val_prompts.jsonl",
+  "decoding": {
+    "max_new_tokens": 128,
+    "temperature": 0.0,
+    "top_k": null,
+    "seed": 1234
+  }
+}

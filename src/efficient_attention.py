@@ -54,6 +54,8 @@ class LinearCausalSelfAttention(nn.Module):
                 raise ValueError(
                     "attention_mask must have shape [batch, sequence_length]"
                 )
+            if not torch.all(attention_mask.bool().any(dim=1)):
+                raise ValueError("Each sequence must contain at least one valid token.")
 
         q = self._split_heads(self.q_proj(x))
         k = self._split_heads(self.k_proj(x))
