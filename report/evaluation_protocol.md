@@ -1,7 +1,6 @@
 # Evaluation protocol (Member 3)
 
-Status: **draft v1 — to be frozen before the first final experiment** (plan §4 B, Task 1).
-Any later change must be recorded in the change log at the bottom, with the reason.
+Status: **Protocol v1, drafted before the final experiments.** The final runs have been completed and are reported against this protocol. The blind human rubric scoring remains pending. Any protocol deviation must be recorded in the change log below with its reason.
 
 ## 1. Research questions and what would answer them
 
