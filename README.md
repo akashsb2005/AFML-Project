@@ -55,6 +55,10 @@ Protocol: `report/evaluation_protocol.md` · rubric: `report/instruction_rubric.
 `report/results.md` · references: `report/references.md`.
 
 
+## Submission completion guide
+
+Follow [`report/submission_completion_guide.md`](report/submission_completion_guide.md) for the blind-scoring handoff, post-scoring aggregation commands, team review/rehearsal checklist, and final local verification steps.
+
 ## Submission status
 
 - Automated verification on the merged `main` branch: **67 tests passed** locally (Python 3.11.9, Windows).
