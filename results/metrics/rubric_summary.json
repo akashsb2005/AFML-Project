@@ -1,0 +1,21 @@
+{
+  "per_model": {
+    "pre": {
+      "mean_relevance": 0.06666666666666667,
+      "mean_format": 0.016666666666666666,
+      "mean_answers": 0.7833333333333333,
+      "mean_coherence": 0.38333333333333336,
+      "mean_total_out_of_8": 1.25,
+      "n_scored": 60
+    },
+    "sft": {
+      "mean_relevance": 0.9,
+      "mean_format": 0.8,
+      "mean_answers": 0.5166666666666667,
+      "mean_coherence": 0.38333333333333336,
+      "mean_total_out_of_8": 2.6,
+      "n_scored": 60
+    }
+  },
+  "missing_scores": 0
+}

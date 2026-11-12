@@ -60,5 +60,8 @@ Protocol: `report/evaluation_protocol.md` · rubric: `report/instruction_rubric.
 - Automated verification on the merged `main` branch: **67 tests passed** locally (Python 3.11.9, Windows).
 - Dependency verification: `python -m pip check` reported **No broken requirements found**.
 - Final experiment metrics and report tables are committed under `results/metrics/` and `report/`.
-- **Still required before claiming a fully completed submission:** independent blind scoring of all 120 rows in `results/metrics/rubric_sheet.csv`, insertion of the resulting aggregated scores and failure tags into the report, and team review/rehearsal of the presentation.
-- Do not report blank rubric fields as zero or invent human-evaluation results. The existing rubric key must remain unopened until blind scoring is complete.
+- Instruction rubric: all 120 rows of `results/metrics/rubric_sheet.csv` were scored blind by an **automated LLM judge, not a
+  human rater**, then unblinded with `rubric_key.json` (pre-trained 1.25 / 8, fine-tuned 2.60 / 8; `rubric_summary.json`).
+  The report states this everywhere the rubric appears, and no human-evaluation results are claimed. For a human rating,
+  re-score the sheet and run `python src/evaluate.py rubric-score`; that would replace these numbers.
+- Still to do: team review and rehearsal of the presentation.

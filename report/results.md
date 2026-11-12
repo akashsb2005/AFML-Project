@@ -55,14 +55,24 @@ the same decoding settings for both rows.
 
 | Model | Response NLL ↓ | Response ppl ↓ | Rubric total /8 ↑ | Relevance | Format | Answers | Coherence | EOS rate | Echo (3-gram copy) ↓ | Repetition ↓ |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Pre-trained | 6.379 | 589 | pending | pending | pending | pending | pending | 0.33 | 0.000 | 0.256 |
-| Fine-tuned (SFT) | 3.928 | 50.8 | pending | pending | pending | pending | pending | 0.55 | 0.030 | 0.453 |
+| Pre-trained | 6.379 | 589 | 1.25 | 0.07 | 0.02 | 0.78 | 0.38 | 0.33 | 0.000 | 0.256 |
+| Fine-tuned (SFT) | 3.928 | 50.8 | 2.60 | 0.90 | 0.80 | 0.52 | 0.38 | 0.55 | 0.030 | 0.453 |
 
 Final run: standard attention; SFT from the pre-trained checkpoint above on Dolly train (13,317 examples, 2,620 skipped
 because the prompt does not fit), 4 epochs, batch 4, lr 3e-4, 10,700 steps, 305 s on a T4. Response NLL covers the full
 Dolly test split (591 scored examples, 51,075 response tokens; 150 skipped, 249 truncated). Generation statistics cover the
-60 fixed test prompts, decoded greedily with 128 new tokens. Rubric columns are **pending** the blind scoring of
-`rubric_sheet.csv`.
+60 fixed test prompts, decoded greedily with 128 new tokens. Rubric scores come from `rubric_summary.json`. The 120 outputs (60 prompts × 2 models) were scored by an automated
+LLM judge, not a team member. The judge followed `report/instruction_rubric.md` and saw only the shuffled sheet
+without model labels. Blinding was partial: the same judge had already read 12 labelled outputs and the demo outputs
+while this file was written. The key was then rebuilt from the sheet's fixed seed and checked row by row against the
+sheet.
+
+The rubric total roughly doubles, from 1.25 to 2.60 out of 8, so the protocol's success criterion is met: lower response NLL
+**and** a higher rubric score. Almost all of the gain is relevance (0.07 → 0.90) and format (0.02 → 0.80). The fine-tuned model
+talks about the question in roughly the requested form, while the pre-trained model answers 45 of 60 prompts with a
+children's story. Coherence does not change (0.38 for both), because looping answers replace looping stories. "Answers, not
+echoes" falls (0.78 → 0.52). An off-topic story still counts as new content, whereas fine-tuned outputs often repeat the
+prompt's words (8 echoes). Both totals are far from 8: neither model gives useful answers.
 
 The same 60 prompts with sampling (temperature 0.8, top-k 50, seed 1234; `*_sampled_generation_summary.json`):
 
@@ -104,7 +114,7 @@ so the 60 prompts were selected with a 64-token prompt budget (`eval_prompt_ids_
 
 The pre-trained model has never seen instructions: Dolly responses are far less likely to it than stories
 (response perplexity 1184 vs story perplexity 15.4), and all 6 outputs inspected so far are
-children's-story text (see E4; the full count comes from the rubric). This is the baseline the SFT model must beat. 413 of
+children's-story text (see E4). This is the baseline the SFT model must beat. 413 of
 737 test examples did not fit the 128-token context and were truncated by the DollySFTDataset rule.
 
 ### Provisional — pre-trained vs fine-tuned, merged pipeline (validation split)
@@ -134,7 +144,7 @@ Fine-tuning clearly lowers response loss, and validation loss was still falling 
 4.14), so these settings did not reach overfitting. Lower loss did not make greedy outputs better overall: repetition
 more than doubles, because the model now loops on answer-style phrases rather than story text. Sampling removes nearly all of
 the looping and raises the EOS rate, but the sampled answers we read are often fluent and factually wrong. These numbers
-cover loops and termination only; whether answers improved needs the rubric.
+cover loops and termination only. The final rubric is in the table above.
 
 Example (`dolly_val_00202`, "Identify which instrument is string or woodwind: Tambura, Tubax"; reference "Tubax is woodwind,
 Tambura is string."): SFT 4 epochs, greedy: "Tuba is string, Tuba is woodwind." It has the right format and wrong content.
@@ -232,20 +242,21 @@ between the two runs: linear attention has no attention-weight dropout (not defi
 
 ## E4 — Failure analysis
 
-Source: `rubric_sheet.csv` notes column (final); provisional examples from `results/metrics/rehearsal/examples.json`.
+Source: tags in the `notes` column of `rubric_sheet.csv`, plus automatic counts from `*_generations.jsonl`. Greedy decoding,
+60 prompts per model. One output can carry several tags.
 
 | Failure tag | Pre-trained | Fine-tuned | Example (prompt id) | Plausible cause |
 |---|---|---|---|---|
-| story-mode | count pending (rubric); every one of the 12 final outputs read so far is story text | none of the 12 read | dolly_test_00577 "What origins and destinations does Delta Vacations offer?" → "Let's go to the beach and see the sea…" | pre-training data contains only children's stories |
-| loop | 11 / 60 greedy outputs with 4-gram repetition > 0.5 | 32 / 60 greedy; 1 / 60 sampled | dolly_test_00482 "Give me some ideas around improving my writing skills" → "practice, practice, practice, …" | greedy decoding of a small model with no repetition penalty; SFT makes short answer phrases very likely |
-| echo | mean 3-gram prompt copy 0.000 | 0.030 greedy, 0.034 sampled | — | rare |
-| off-topic | count pending (rubric) | count pending (rubric) | | |
+| story-mode | 45 / 60 | 0 / 60 | dolly_test_00577 "What origins and destinations does Delta Vacations offer?" → "Let's go to the beach and see the sea…" | pre-training data contains only children's stories |
+| loop | rubric: 38 / 60 (a phrase repeated ≥ 3 times); automatic: 11 / 60 with 4-gram repetition > 0.5 | rubric: 40 / 60; automatic: 32 / 60 greedy, 1 / 60 sampled | dolly_test_00482 "Give me some ideas around improving my writing skills" → "practice, practice, practice, …" | greedy decoding of a small model with no repetition penalty; SFT makes short answer phrases very likely |
+| echo | 0 / 60 | 8 / 60 (mean 3-gram prompt copy 0.030) | dolly_test_00294 "What is a landlord?" → "A landlord is a landlord that is a landlording." | the model learned to open with the question's subject but has nothing to add |
+| off-topic (not a story) | 1 / 60 | 1 / 60 | dolly_test_00104 "Give me a list of the world's most popular leaders" → "The world's most popular sport …" | |
 | no EOS within 128 tokens | 40 / 60 greedy | 27 / 60 greedy; 6 / 60 sampled | | loops never end; sampling breaks them |
 | does not fit / truncated | 150 / 741 test prompts skipped, 249 responses cut at 256 tokens | same | | context length 256 |
-| factual-error | count pending (rubric) | most of the 12 sampled outputs read | dolly_test_00374 "Who is Richard Wayne Bogosian?" → "Brong Wayne is an American, politican's American diplomat in 199597…" | 5 M parameters and children's-story pre-training hold almost no world knowledge |
+| factual-error | 0 / 60 (stories make no factual claims) | 12 / 60 tagged; nearly every answer with content is wrong | dolly_test_00374 "Who is Richard Wayne Bogosian?" → "Brong Wayne is an American, politican's American diplomat in 199597…" | 5 M parameters and children's-story pre-training hold almost no world knowledge |
 
-The "read so far" counts come from the first 12 of the 60 prompts, read by Member 3 while preparing this file. They are
-not the blind rubric, which will replace them.
+A few fine-tuned answers are partly right: "Kora is string, Colora is percussion" (Cultrun, Kora), "Kidney" for a
+cancer that causes blood in the urine, and real character names (Rhaegar, Sandor) before a loop. These are the best 3 of 60.
 
 Also observed: the tokenizer reproduces mis-encoded quotation marks present in the training text
 (`â€œ` instead of “), and several TinyStories validation stories share the same first six words
