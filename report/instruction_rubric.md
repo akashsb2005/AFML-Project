@@ -23,6 +23,16 @@ be expected to know facts, and scoring it would mostly measure luck. Factual err
 4. Use the `notes` column for failure tags: `echo`, `loop`, `off-topic`, `story-mode` (answers with a
    TinyStories-style story), `truncated`, `factual-error`, `format-violation`, `other`.
 
+## How the final sheet was scored
+
+An automated LLM judge scored the final sheet (2026-11-12), not a person (see the protocol change log). Two readings of
+the criteria were applied consistently:
+
+* **Answers.** An unrelated story is new content but not an answer, so it scores 1. Text that only repeats the
+  instruction's words, or a loop of a single token, scores 0.
+* **Coherence.** A clause or word repeated three or more times is a loop and scores 0. Repetition below that, or a
+  sudden topic jump, scores 1.
+
 ## Failure taxonomy (E4)
 
 The tags above are counted per model and illustrated with 2–3 real examples each in `report/results.md`,
