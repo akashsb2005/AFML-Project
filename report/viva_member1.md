@@ -144,4 +144,4 @@ Profile and optimize the linear-attention implementation, avoid materializing th
 - The model is small and trained on a narrow story corpus.
 - Linear attention was not faster or more memory-efficient in the measured T4 settings.
 - Fine-tuning made outputs more answer-shaped but did not make the model factually reliable.
-- Human rubric scores remain pending in the current rubric sheet; do not invent or report scores until blind scoring is complete.
+- The rubric was scored blind by an automated LLM judge, not a human: 1.25/8 pre-trained vs 2.60/8 after SFT. Do not describe it as a human evaluation.

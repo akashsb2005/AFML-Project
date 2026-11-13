@@ -72,7 +72,12 @@ one rater), hardware and noise; don't claim "improves" without a measured, large
   test (standard attention, 10,000 steps). On average the model is about as unsure as if it were choosing among 8–9
   equally likely next tokens, instead of all 8,000. Validation loss was still falling at the last step, so it is not overfitting.
 * Did SFT reduce response NLL, and by how much? Did rubric scores agree? — Yes. Dolly test response NLL fell from 6.38 to 3.93,
-  so response perplexity fell from 589 to 51. EOS rate rose from 0.33 to 0.55 and ROUGE-L from 0.078 to 0.139 (greedy). The rubric is still to be scored blind.
+  so response perplexity fell from 589 to 51. EOS rate rose from 0.33 to 0.55 and ROUGE-L from 0.078 to 0.139 (greedy). The rubric agreed: 1.25 → 2.60 out of 8,
+  almost all from relevance (0.07 → 0.90) and format (0.02 → 0.80). Coherence stayed at 0.38.
+* Who scored the rubric, and is that a problem? — An automated LLM judge, not one of us, working from the shuffled
+  sheet without model labels. Weaknesses: one rater, an LLM rather than a person, and partial blinding, because it had
+  read a few labelled outputs earlier. The rubric only confirms what the automatic numbers already show (story mode → answer
+  shape, loops, wrong facts), so the conclusion does not rest on it alone.
 * At which sequence length (if any) is linear attention faster / lighter than softmax on our GPU? — On the T4,
   at **none of the lengths we measured (128–2048)**. It trains at 0.35–0.40× the speed and uses 2.2–2.5× the
   memory. But its forward time grows ≈ 2.0× per doubling of T against 2.0 → 2.95× for softmax, so the gap shrinks
