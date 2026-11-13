@@ -61,8 +61,12 @@ Follow [`report/submission_completion_guide.md`](report/submission_completion_gu
 
 ## Submission status
 
-- Automated verification on the merged `main` branch: **67 tests passed** locally (Python 3.11.9, Windows).
+- Automated verification on the merged `main` branch: **67 tests passed** locally (Python 3.11.9, Windows). Re-run the tests before final submission.
 - Dependency verification: `python -m pip check` reported **No broken requirements found**.
-- Final experiment metrics and report tables are committed under `results/metrics/` and `report/`.
-- **Still required before claiming a fully completed submission:** independent blind scoring of all 120 rows in `results/metrics/rubric_sheet.csv`, insertion of the resulting aggregated scores and failure tags into the report, and team review/rehearsal of the presentation.
-- Do not report blank rubric fields as zero or invent human-evaluation results. The existing rubric key must remain unopened until blind scoring is complete.
+- Final experiment metrics and report tables are documented under `results/metrics/` and `report/`.
+- Blind human evaluation of all 120 responses (60 per model) has been completed by one teammate. The scored data is stored in `results/metrics/rubric_sheet_scored.csv`.
+- Aggregated rubric scores and failure-tag analysis are documented in `report/results.md` and `report/final_report.md`.
+- The private model-to-response mapping remains in `results/metrics/rubric_key.json` and must not be committed.
+- **Remaining before final submission:** team review of the results, presentation rehearsal, and final verification of the repository and deliverables.
+
+The human evaluation is a single-rater assessment; inter-rater reliability was not measured. Its findings should be interpreted as descriptive rather than statistically conclusive.
