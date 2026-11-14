@@ -3,8 +3,11 @@
 **Team:** Akash Shivanand Bagoji (model and pre-training), Haneesh (data, tokenizer and fine-tuning),
 Samvith Vaddiparthi (evaluation, experiments and report)
 
-> **Technical report status: results documented; human rubric evaluation pending.** All experimental numbers are from the final runs (Tesla T4, commit f69db63). The rubric score fields remain blank pending independent blind scoring; no human scores are claimed here.
-> Every reported number comes from `results/metrics/` or `experiments/experiment_log.csv`. Detailed tables are in `report/results.md`.
+> **Report status.** All experimental numbers are from the final runs (Tesla T4, commit f69db63). The instruction
+> rubric (§5.2) was scored by an automated LLM judge working blind from the shuffled sheet, **not by an independent human
+> rater**, and no human scores are claimed. Scores: `results/metrics/rubric_sheet_scored.csv`; a human re-score of the blank `rubric_sheet.csv` can replace them.
+> Every reported number comes from `results/metrics/` or `experiments/experiment_log.csv`. Detailed tables are in
+> `report/results.md`.
 
 ## Abstract
 
@@ -15,7 +18,7 @@ used more memory at every sequence length we measured (128–2048): 0.35–0.40�
 the peak training memory of standard attention. Its forward time did scale linearly, and the latency gap shrank
 from 2.52× at 128 tokens to 1.08× at 2048. After 10,000 steps, the standard model reached test perplexity 8.51,
 against 8.78 for linear attention, which took 2.34× as long to train. Fine-tuning cut Dolly test response NLL from 6.38
-to 3.93. Outputs became answer-shaped but rarely correct, and greedy decoding looped more often after fine-tuning.
+to 3.93, and the blind rubric score rose from 1.25 to 2.60 out of 8. Outputs became answer-shaped but rarely correct, and greedy decoding looped more often after fine-tuning.
 
 ## 1. Introduction
 
@@ -82,7 +85,7 @@ steps). We chose these settings on Dolly validation in a rehearsal, comparing lr
 * **Language modelling:** token-weighted NLL and perplexity on held-out stories, built exactly like the training
   blocks. The test split is scored once per final checkpoint.
 * **Instruction following:** response-only NLL on Dolly test, plus 60 fixed held-out prompts (seed 2026, balanced
-  across categories) decoded greedily with the same settings for every model. The outputs are scored blind on four
+  across categories) decoded greedily with the same settings for every model. An automated LLM judge scores the outputs blind on four
   0–2 criteria: relevance, format, answering rather than echoing, and coherence. Automatic statistics cover EOS rate,
   4-gram repetition, 3-gram prompt copying and ROUGE-L.
 * **Efficiency:** tokens per second, forward latency across T = 128…2048, generation latency and peak GPU memory, with
@@ -113,8 +116,8 @@ not always consistent. For example, a monster is "big and scary" and then "very 
 
 | Model | Response NLL | Rubric /8 | EOS rate | Prompt copy | Repetition |
 |---|---|---|---|---|---|
-| Pre-trained | 6.379 | pending | 0.33 | 0.000 | 0.256 |
-| Fine-tuned | 3.928 | pending | 0.55 | 0.030 | 0.453 |
+| Pre-trained | 6.379 | 1.25 | 0.33 | 0.000 | 0.256 |
+| Fine-tuned | 3.928 | 2.60 | 0.55 | 0.030 | 0.453 |
 
 Response NLL is on the full Dolly test split (591 scored examples). Figure 2 shows the fine-tuning curves. The other columns cover 60 fixed test prompts
 decoded greedily. With sampling (temperature 0.8, top-k 50), the fine-tuned model stopped on EOS in 90% of outputs
@@ -154,15 +157,18 @@ Fine-tuning took 532 s, against 305 s.
 
 ### 5.4 E4: failure analysis
 
-Human-coded counts of off-topic and factually wrong answers remain pending the blind rubric. The following are automatic generation statistics on the 60 prompts:
+The counts come from failure tags noted during the LLM-judge rubric pass (not human-coded), on 60 greedy outputs per
+model. Loops are also counted automatically.
 
-* **Story mode (pre-trained).** The pre-trained model answers instructions with children's stories. For example,
+* **Story mode.** 45 of 60 pre-trained outputs are children's stories, and none of the fine-tuned outputs are. For example,
   "What origins and destinations does Delta Vacations offer?" → "Let's go to the beach and see the sea…".
 * **Loops.** 11 of 60 greedy outputs before fine-tuning and 32 of 60 after have 4-gram repetition above 0.5, e.g.
   "Give me some ideas around improving my writing skills" → "practice, practice, practice, …". With sampling, 1 of 60
   loops.
 * **Right format, wrong content.** The fine-tuned model learns the shape of an answer: numbered lists, "Apple: …" labels
-  for classification, "X is an American …" for biographies. The content is usually wrong.
+  for classification, "X is an American …" for biographies. The content is usually wrong (12 outputs tagged as
+  factual errors), and 8 outputs only echo the question, e.g. "A landlord is a landlord that is a landlording." The best
+  of 60 is partly right: "Kora is string, Colora is percussion."
 * **Garbled facts.** "Who is Richard Wayne Bogosian?" → "Brong Wayne is an American, politican's American diplomat in
   199597…". A 5 M-parameter model pre-trained on children's stories holds almost no world knowledge.
 * **Context.** 150 of 741 test prompts do not fit in 256 tokens, and 249 responses are cut.
@@ -185,7 +191,7 @@ attention stores T scores per token and head. Below T ≈ 4,096 the linear form 
 At our context length of 256, standard attention is the better choice on this GPU.
 
 **Lower loss did not automatically give better answers.** In the rehearsal, fine-tuning moved outputs from story text to answer-shaped text and
-lowered response loss, but greedy decoding looped more. The final rubric decides whether answers actually improved.
+lowered response loss, but greedy decoding looped more. The final runs show the same pattern.
 
 **Linear attention also cost a little quality.** At equal steps, it ended with 3.1% higher test perplexity and higher
 response NLL after fine-tuning. The gap narrowed from 9% at 3,000 rehearsal steps to 3% at 10,000. Both curves were still falling, so it may close
@@ -193,12 +199,14 @@ further. At this scale it did not save time either way.
 
 **Fine-tuning changed the form of the output more than its content.** Response NLL fell sharply, EOS and ROUGE-L rose, and
 outputs switched from stories to answer-shaped text. With greedy decoding, though, most fine-tuned outputs loop. With sampling
-they terminate but are usually factually wrong. The rubric will show how much of the NLL gain reaches the human-judged
-scores.
+they terminate but are usually factually wrong. The rubric total doubled (1.25 → 2.60 out of 8), but
+almost entirely through relevance and format. Coherence stayed at 0.38 for both models, and both remain far from a useful
+answer.
 
 ## 7. Limitations
 
-* One seed per configuration unless stated, and one rater for the 60 prompts.
+* One seed per configuration unless stated. The rubric has a single rater, an automated LLM judge rather than a person,
+  and its blinding was partial (§5.2 of `results.md`).
 * A small model and data budget, and a free-tier GPU.
 * Efficiency is measured for this implementation. A chunked or fused kernel, or a recurrent generation loop, would
   change the constant factors. Neither variant uses a KV cache.

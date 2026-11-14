@@ -36,7 +36,7 @@ held-out Dolly prompts in the same template with identical, deterministic (greed
 (i) the response-only NLL on the Dolly test split, where prompt and padding tokens are excluded exactly as
 in SFT; (ii) automatic statistics of the generations — EOS-termination, empty responses, distinct-n,
 repeated-4-gram rate, 3-gram copy rate from the prompt, ROUGE-L against the human reference; and
-(iii) a blind human rubric with four 0–2 criteria (`report/instruction_rubric.md`). Lower perplexity
+(iii) a blind rubric with four 0–2 criteria (`report/instruction_rubric.md`). Lower perplexity
 alone is not taken as better instruction following.
 
 **Efficiency.** Training throughput, inference forward latency over sequence lengths 128–2048, generation

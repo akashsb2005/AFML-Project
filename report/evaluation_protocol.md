@@ -1,6 +1,6 @@
 # Evaluation protocol (Member 3)
 
-Status: **Protocol v1, drafted before the final experiments.** The final runs have been completed and are reported against this protocol. The blind human rubric scoring remains pending. Any protocol deviation must be recorded in the change log below with its reason.
+Status: **Protocol v1, drafted before the final experiments.** The final runs have been completed and are reported against this protocol. The rubric was scored by an automated LLM judge instead of a human rater (see the change log); a human re-score has not been done. Any protocol deviation must be recorded in the change log below with its reason.
 
 ## 1. Research questions and what would answer them
 
@@ -115,3 +115,4 @@ rater) are stated as a limitation.
 | 2026-10-24 | v1 drafted | |
 | 2026-10-26 | data paths, per-story perplexity, Dolly duplicate handling | adapted to Member 2's implemented pipeline |
 | 2026-11-04 | Dolly splits and skip rule from the deduplicated data, story probes with distinct openings, checkpoint paths | Member 2's PR #5 deduplicates before splitting; the old story openings gave identical greedy continuations |
+| 2026-11-12 | The rubric was scored by an automated LLM judge instead of a human rater. The key was rebuilt from the fixed seed (checked row by row) | No team member scored the sheet. Reported as a limitation; the judge had seen 12 labelled outputs beforehand |

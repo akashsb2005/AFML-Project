@@ -84,7 +84,7 @@ because the prompt does not fit), 4 epochs, batch 4, lr 3e-4, 10,700 steps, 305 
 Dolly test split (591 scored examples, 51,075 response tokens; 150 skipped, 249 truncated). Generation statistics cover the
 
 60 fixed test prompts, decoded greedily with 128 new tokens. Blind rubric evaluation was completed
-for all 120 responses (60 per model) by one teammate. The scored sheet is
+for all 120 responses (60 per model) by an automated LLM judge (not a human rater). No human evaluation was carried out. The scored sheet is
 results/metrics/rubric_sheet_scored.csv; the model mapping is kept separately in the
 private, git-ignored results/metrics/rubric_key.json.
 
@@ -108,7 +108,7 @@ SFT validation loss was still falling at the last step (4.98 at step 500, 4.08 a
 0.33 → 0.55 greedy, 0.43 → 0.90 sampled) and overlap the references more (ROUGE-L
 0.078 → 0.139).
 
-In the blind human evaluation, SFT achieves a mean rubric score of 2.60/8 compared
+In the blind rubric evaluation (automated LLM judge), SFT achieves a mean rubric score of 2.60/8 compared
 with 1.25/8 for the pre-trained model, an increase of 1.35 points. Mean relevance
 improves from 0.067 to 0.900, and mean format improves from 0.017 to 0.800.
 However, mean answers decreases from 0.783 to 0.517, while mean coherence remains
@@ -329,7 +329,7 @@ Unavoidable differences
 between the two runs: linear attention has no attention-weight dropout (not defined for the linear form).
 E4 — Failure analysis
 Source: notes in results/metrics/rubric_sheet_scored.csv, mapped to model labels
-using the private results/metrics/rubric_key.json. One teammate rated 60 responses
+using the private results/metrics/rubric_key.json. An automated LLM judge (not a human) rated 60 responses
 per model. Counts are the number of responses carrying each tag.
 Failure tag	Pre-trained	Fine-tuned (SFT)	Interpretation
 story-mode	45 / 60 (75.0%)	0 / 60 (0.0%)	Story-mode was not observed in the evaluated SFT responses
@@ -351,7 +351,7 @@ story-mode tag fell from 45 pre-trained responses to none of the 60 SFT response
 However, the loop tag increased from 38 to 40 responses. Factual-error and echo
 tags, which were not recorded for the pre-trained responses, were recorded for
 12 and 8 SFT responses respectively. These are descriptive results from one
-teammate's ratings; there was no second rater or inter-rater reliability estimate.
+automated LLM judge's ratings; there was no second rater or inter-rater reliability estimate.
 
 The separate automatic decoding analysis also found that 11 / 60 pre-trained
 greedy outputs and 32 / 60 SFT greedy outputs had 4-gram repetition above 0.5.
@@ -370,8 +370,8 @@ Also observed: the tokenizer reproduces mis-encoded quotation marks present in t
 
 story-prompt set should use distinct openings.
 Limitations
-- One random seed per configuration. Blind human evaluation used one teammate as
-  the rater for 60 responses per model; inter-rater reliability was not measured.
+- One random seed per configuration. The blind rubric used a single automated LLM judge, not a human, as
+  the rater for 60 responses per model; its blinding was partial (it had seen a few labelled outputs earlier); inter-rater reliability was not measured.
   The rubric findings should therefore be interpreted as a single-rater evaluation,
   not as a statistically conclusive assessment.
 - A small model and data budget: 50,000 TinyStories stories and 10,000 steps, with both models still improving at the end.

@@ -46,7 +46,7 @@ SFT uses Member 1's pretraining checkpoint and defaults to a 256-token context. 
 | `python src/evaluate.py sft-loss --ckpt C --label L --data data/processed/dolly_test.jsonl --exclude data/processed/dolly_train.jsonl data/processed/dolly_validation.jsonl` | response-only NLL (overlapping prompts dropped) |
 | `python src/select_eval_prompts.py --test ... --exclude ... --tokenizer ...` | freeze the 60 evaluation prompts |
 | `python src/evaluate.py generate --ckpt C --label L --prompts results/metrics/eval_prompts.jsonl` | fixed-setting generations + text statistics |
-| `python src/evaluate.py rubric-sheet --outputs pre=... sft=...` / `rubric-score ...` | blind human evaluation |
+| `python src/evaluate.py rubric-sheet --outputs pre=... sft=...` / `rubric-score ...` | blind rubric evaluation |
 | `python src/benchmark.py --configs configs/baseline.yaml configs/efficient_attention.yaml --label L` | throughput, latency, memory |
 | `python src/make_figures.py loss/bench/bars ...` | report figures from saved results |
 | `python src/log_experiment.py --run-id ... --member ... --stage ...` | append to the experiment log |
@@ -64,9 +64,9 @@ Follow [`report/submission_completion_guide.md`](report/submission_completion_gu
 - Automated verification on the merged `main` branch: **67 tests passed** locally (Python 3.11.9, Windows). Re-run the tests before final submission.
 - Dependency verification: `python -m pip check` reported **No broken requirements found**.
 - Final experiment metrics and report tables are documented under `results/metrics/` and `report/`.
-- Blind human evaluation of all 120 responses (60 per model) has been completed by one teammate. The scored data is stored in `results/metrics/rubric_sheet_scored.csv`.
+- Blind rubric evaluation of all 120 responses (60 per model) was completed by an automated LLM judge (not a human rater); no human evaluation was carried out. The scored data is stored in `results/metrics/rubric_sheet_scored.csv`.
 - Aggregated rubric scores and failure-tag analysis are documented in `report/results.md` and `report/final_report.md`.
 - The private model-to-response mapping remains in `results/metrics/rubric_key.json` and must not be committed.
 - **Remaining before final submission:** team review of the results, presentation rehearsal, and final verification of the repository and deliverables.
 
-The human evaluation is a single-rater assessment; inter-rater reliability was not measured. Its findings should be interpreted as descriptive rather than statistically conclusive.
+The rubric is a single-rater assessment by an automated LLM judge, not a human evaluation; inter-rater reliability was not measured. Its findings should be interpreted as descriptive rather than statistically conclusive.
