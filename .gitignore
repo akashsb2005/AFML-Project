@@ -21,3 +21,6 @@ results/metrics/*
 .env
 .env.*
 !.env.example
+
+# Locally preserved Member 2 artifacts (data/checkpoints belong in shared storage)
+member2_final/

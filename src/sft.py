@@ -5,8 +5,11 @@ import importlib
 import inspect
 import json
 import random
+import shutil
 import sys
+import time
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from pathlib import Path
 
 import torch
@@ -240,6 +243,8 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--log-every", type=int, default=10)
     parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR)
+    parser.add_argument("--resume", action="store_true",
+                        help="resume model and optimizer from output-dir/latest.pt")
     return parser.parse_args()
 
 
@@ -292,16 +297,55 @@ def main():
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate,
                                   weight_decay=config.weight_decay)
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    (args.output_dir / "config.json").write_text(json.dumps(asdict(config), indent=2), encoding="utf-8")
+    if args.resume:
+        resume_path = args.output_dir / "latest.pt"
+        payload = read_checkpoint(resume_path, device)
+        state = payload.get("model_state", payload.get("model_state_dict"))
+        if not isinstance(state, dict) or "optimizer_state_dict" not in payload:
+            raise ValueError(f"{resume_path} does not contain resumable model and optimizer state")
+        model.load_state_dict(state, strict=True)
+        optimizer.load_state_dict(payload["optimizer_state_dict"])
+        start_epoch = int(payload.get("epoch", 0))
+        if start_epoch >= config.epochs:
+            raise ValueError("--epochs must be greater than the checkpoint epoch when resuming")
+    else:
+        start_epoch = 0
+
+    # Keep any previous final outputs before replacing their canonical names.
+    existing = [args.output_dir / name for name in ("best.pt", "latest.pt", "config.json", "training_log.json")
+                if (args.output_dir / name).is_file()]
+    if existing:
+        backup_dir = args.output_dir / "backups" / datetime.now().strftime("%Y%m%d-%H%M%S")
+        backup_dir.mkdir(parents=True, exist_ok=False)
+        for old_path in existing:
+            shutil.copy2(old_path, backup_dir / old_path.name)
+
+    config_path = args.output_dir / "config.json"
+    config_path.write_text(json.dumps({**asdict(config), "pretrained_checkpoint": str(args.pretrained_checkpoint),
+                                       "device": str(device), "model_config": model_config}, indent=2), encoding="utf-8")
     best_loss = float("inf")
-    for epoch in range(1, config.epochs + 1):
+    training_log_path = args.output_dir / "training_log.json"
+    training_log = {"config": asdict(config), "device": str(device),
+                    "pretrained_checkpoint": str(args.pretrained_checkpoint), "epochs": []}
+    if args.resume and training_log_path.is_file():
+        training_log = json.loads(training_log_path.read_text(encoding="utf-8"))
+        best_path = args.output_dir / "best.pt"
+        if best_path.is_file():
+            best_payload = read_checkpoint(best_path, device)
+            best_loss = float(best_payload.get("validation_loss", float("inf")))
+    for epoch in range(start_epoch + 1, config.epochs + 1):
+        epoch_started = time.perf_counter()
         train_loss = run_epoch(model, train_loader, device, optimizer, config.log_every)
         val_loss = run_epoch(model, val_loader, device)
+        elapsed = time.perf_counter() - epoch_started
         print(f"Epoch {epoch}/{config.epochs}: train_loss={train_loss:.4f} val_loss={val_loss:.4f}")
         save_checkpoint(model, optimizer, epoch, val_loss, config, args.output_dir / "latest.pt")
         if val_loss < best_loss:
             best_loss = val_loss
             save_checkpoint(model, optimizer, epoch, val_loss, config, args.output_dir / "best.pt")
+        training_log["epochs"].append({"epoch": epoch, "train_loss": train_loss,
+                                       "validation_loss": val_loss, "duration_seconds": elapsed})
+        training_log_path.write_text(json.dumps(training_log, indent=2) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

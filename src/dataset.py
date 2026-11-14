@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import torch
@@ -8,6 +9,20 @@ from torch.utils.data import Dataset
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data" / "processed"
 TOKENIZER_PATH = ROOT / "artifacts" / "tokenizer" / "tokenizer.json"
+
+
+def save_dataset_stats(name, split, stats):
+    """Persist per-split filtering counts beside the processed data."""
+    path = DATA_DIR / f"{name}_{split}_dataset_stats.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "dataset": name,
+        "split": split,
+        "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
+        **stats,
+    }
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return path
 
 
 def load_tokenizer():
@@ -91,6 +106,10 @@ class TinyStoriesDataset(Dataset):
             f"TinyStories {split}: {len(self.examples)} blocks "
             f"(block size {block_size})"
         )
+        self.stats = {"original_examples": len(read_jsonl(path)),
+                      "final_blocks_retained": len(self.examples),
+                      "block_size": block_size}
+        save_dataset_stats("tiny_stories", split, self.stats)
 
     def __len__(self):
         return len(self.examples)
@@ -208,6 +227,7 @@ class DollySFTDataset(Dataset):
         print(f"Dolly {split} statistics (max length {max_length}):")
         for name, count in self.stats.items():
             print(f"  {name}: {count}")
+        save_dataset_stats("dolly", split, {**self.stats, "max_length": max_length})
 
     def __len__(self):
         return len(self.examples)

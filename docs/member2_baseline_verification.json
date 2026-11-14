@@ -1,0 +1,117 @@
+﻿{
+    "created":  "2026-11-14T15:38:01.8131268+05:30",
+    "repository":  "D:\\PES\\SEM-5\\AFML\\project\\AFML-Project",
+    "branch":  "member-2-data-sft",
+    "status":  [
+
+               ],
+    "recent_commits":  [
+                           "d2f734a Complete Member 2 data pipeline and SFT integration",
+                           "299afbc Merge pull request #3 from akashsb2005/docs/member1-implementation",
+                           "8f07381 Add Member 1 implementation documentation",
+                           "961589c Merge pull request #2 from akashsb2005/feature/member1-model-pretraining",
+                           "fcf75f6 Add Member 1 model architecture and pretraining"
+                       ],
+    "inventory":  [
+                      {
+                          "path":  "data\\README.md",
+                          "size_bytes":  573,
+                          "modified":  "2026-11-04T18:51:26.4842209+05:30",
+                          "sha256":  "8FC40D669DCE499A797142BA874BFDC38344E8411D2CB36155DF845E4408344D"
+                      },
+                      {
+                          "path":  "data\\processed\\dolly_stats.json",
+                          "size_bytes":  513,
+                          "modified":  "2026-11-04T18:57:06.1428795+05:30",
+                          "sha256":  "3CE7CF40D3B4FB063604395C5974B15A0B0092E3DC0BFDED1D97B05D8C44B08B"
+                      },
+                      {
+                          "path":  "data\\processed\\dolly_test.jsonl",
+                          "size_bytes":  637004,
+                          "modified":  "2026-11-04T18:57:06.1428795+05:30",
+                          "sha256":  "197B9FC17A9A8B92655188E96DE54DAD6AC0EB3F0FE37CDFB1B8476A17F00FEC"
+                      },
+                      {
+                          "path":  "data\\processed\\dolly_train.jsonl",
+                          "size_bytes":  11631014,
+                          "modified":  "2026-11-04T18:57:06.1275105+05:30",
+                          "sha256":  "7447331B49D059564C17D41242733D741A30587DFC70E08B4364A8198879ACE4"
+                      },
+                      {
+                          "path":  "data\\processed\\dolly_validation.jsonl",
+                          "size_bytes":  658392,
+                          "modified":  "2026-11-04T18:57:06.1385935+05:30",
+                          "sha256":  "85799CF2D386D2D8E88F1F55782B43CBA6F53C32EEC41E2F68277E9AB1CBFF0C"
+                      },
+                      {
+                          "path":  "data\\processed\\tiny_stories_stats.json",
+                          "size_bytes":  430,
+                          "modified":  "2026-10-25T16:41:20.3436464+05:30",
+                          "sha256":  "282F844351583AA5CCC12167DB196531E6FA8102CCA5E9349EE049484E8EA82F"
+                      },
+                      {
+                          "path":  "data\\processed\\tiny_stories_test.jsonl",
+                          "size_bytes":  441117,
+                          "modified":  "2026-10-25T16:41:20.3351168+05:30",
+                          "sha256":  "823DC5257EA178B785D6654A0AEFDED5AE4AC2416804CE6A5327EA736495A1FF"
+                      },
+                      {
+                          "path":  "data\\processed\\tiny_stories_train.jsonl",
+                          "size_bytes":  8164898,
+                          "modified":  "2026-10-25T16:41:20.3144444+05:30",
+                          "sha256":  "619A3D380B246E7EE85087345E98C6580E7B02E2599294CBF8BDBD43ECAEDFCA"
+                      },
+                      {
+                          "path":  "data\\processed\\tiny_stories_validation.jsonl",
+                          "size_bytes":  448781,
+                          "modified":  "2026-10-25T16:41:20.3144444+05:30",
+                          "sha256":  "7281D5204C48B2C8E686309F458168276356FF1A506FF52D40C919BC4E36C1CA"
+                      },
+                      {
+                          "path":  "artifacts\\tokenizer\\config.json",
+                          "size_bytes":  342,
+                          "modified":  "2026-10-25T16:46:59.5055007+05:30",
+                          "sha256":  "F59737F853E7EF8242903611C02835D7E643531BC985E5925B6733B76364206F"
+                      },
+                      {
+                          "path":  "artifacts\\tokenizer\\tokenizer.json",
+                          "size_bytes":  542223,
+                          "modified":  "2026-10-25T16:46:59.5055007+05:30",
+                          "sha256":  "8300E61830CE1FB698089D13C1BAACA60ED2711DC338D5504C49478268F8D22F"
+                      },
+                      {
+                          "path":  "checkpoints\\README.md",
+                          "size_bytes":  219,
+                          "modified":  "2026-11-04T18:46:30.5829513+05:30",
+                          "sha256":  "FE8222A6FDD4261B833D7A9BD65377A639BE28797F21018FC849735658462BAF"
+                      },
+                      {
+                          "path":  "experiments\\experiment_log.csv",
+                          "size_bytes":  241,
+                          "modified":  "2026-11-04T18:46:30.5849499+05:30",
+                          "sha256":  "B6180503AF4CF71AC387A65004D6C8AC6FDF4B484E2FE66757369C9C0F96161B"
+                      },
+                      {
+                          "path":  "results\\figures\\.gitkeep",
+                          "size_bytes":  0,
+                          "modified":  "2026-11-04T18:46:30.5868348+05:30",
+                          "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+                      },
+                      {
+                          "path":  "results\\metrics\\.gitkeep",
+                          "size_bytes":  0,
+                          "modified":  "2026-11-04T18:46:30.5868348+05:30",
+                          "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+                      }
+                  ],
+    "present_directories":  [
+                                "data",
+                                "artifacts",
+                                "checkpoints",
+                                "experiments",
+                                "results"
+                            ],
+    "missing_directories":  [
+                                "logs"
+                            ]
+}
