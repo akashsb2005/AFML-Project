@@ -1,7 +1,7 @@
 # Efficient Training and Instruction Fine-Tuning of Small Language Models
 
-**Team:** Akash Shivanand Bagoji (model and pre-training), Haneesh (data, tokenizer and fine-tuning),
-Samvith Vaddiparthi (evaluation, experiments and report)
+**Team:** Akash Shivanand Bagoji, PES1UG24AM339 (model and pre-training); Haneesh E, PES1UG24AM471 (data, tokenizer and
+fine-tuning); Samvith Vaddiparthi, PES1UG24AM468 (evaluation, experiments and report)
 
 > **Report status.** All experimental numbers are from the final runs (Tesla T4, commit f69db63). The instruction
 > rubric (§5.2) was scored by an automated LLM judge working blind from the shuffled sheet, **not by an independent human
@@ -223,9 +223,9 @@ worse perplexity. At a 256-token context, standard attention is the better choic
 
 ## Individual contributions
 
-* **Akash Shivanand Bagoji:** model, both attention variants, pre-training, generation.
-* **Haneesh:** preprocessing, tokenizer, datasets, loss masking, fine-tuning.
-* **Samvith Vaddiparthi:** evaluation protocol and scripts, benchmarks, experiment log, analysis, report, presentation plan.
+* **Akash Shivanand Bagoji (PES1UG24AM339):** model, both attention variants, pre-training, generation.
+* **Haneesh E (PES1UG24AM471):** preprocessing, tokenizer, datasets, loss masking, fine-tuning.
+* **Samvith Vaddiparthi (PES1UG24AM468):** evaluation protocol and scripts, benchmarks, experiment log, analysis, report, presentation plan.
 
 ## References
 

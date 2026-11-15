@@ -3,11 +3,11 @@
 AFML course project — a decoder-only Transformer pre-trained **from scratch** on TinyStories, instruction
 fine-tuned on Databricks Dolly 15K, and compared with an efficient (linear) attention variant.
 
-| Member | Role | Owns |
-|---|---|---|
-| Akash | Member 1 — model & pre-training | `src/model.py`, `src/attention.py`, `src/efficient_model.py`, `src/efficient_attention.py`, `src/training.py`, `src/pretrain.py`, `src/pretrain_efficient.py`, `configs/` |
-| Haneesh | Member 2 — data, tokenizer & SFT | `src/tokenizer.py`, `src/dataset.py`, `src/preprocess.py`, `src/sft.py` |
-| Samvith | Member 3 — evaluation, experiments & report | `src/evaluate.py`, `src/benchmark.py`, `src/model_api.py`, `src/select_eval_prompts.py`, `src/make_figures.py`, `src/log_experiment.py`, `experiments/`, `results/`, `report/` |
+| Member | SRN | Role | Owns |
+|---|---|---|---|
+| Akash Shivanand Bagoji | PES1UG24AM339 | Member 1 — model & pre-training | `src/model.py`, `src/attention.py`, `src/efficient_model.py`, `src/efficient_attention.py`, `src/training.py`, `src/pretrain.py`, `src/pretrain_efficient.py`, `configs/` |
+| Haneesh E | PES1UG24AM471 | Member 2 — data, tokenizer & SFT | `src/tokenizer.py`, `src/dataset.py`, `src/preprocess.py`, `src/sft.py` |
+| Samvith Vaddiparthi | PES1UG24AM468 | Member 3 — evaluation, experiments & report | `src/evaluate.py`, `src/benchmark.py`, `src/model_api.py`, `src/select_eval_prompts.py`, `src/make_figures.py`, `src/log_experiment.py`, `experiments/`, `results/`, `report/` |
 
 Interfaces between the parts: **`docs/interfaces.md`**. Member 1 implementation record: **`docs/member1_implementation.md`** and viva guide: **`report/viva_member1.md`**. Member 2's detailed workflow is in **`docs/member2_data_sft.md`**.
 
@@ -24,6 +24,13 @@ Details: `report/results.md`; write-up: `report/final_report.md`; every run: `ex
 
 **Reproduce:** open `notebooks/final_runs.ipynb` in Colab with a T4 GPU and run all cells (about 1.5 h). It calls
 `scripts/run_final.sh`, which saves everything to Google Drive and resumes where it stopped after a disconnect.
+
+## Submission materials
+
+- Paper (IEEE format): `paper/main.tex`. Compile with IEEEtran on Overleaf; its figures are in `paper/` and `results/figures/`.
+- Slides on the official course template: `AFML_Final_Presentation_Template.pptx`
+- Presentation video script: `report/video_script.md`
+- Datasets: [TinyStories](https://huggingface.co/datasets/roneneldan/TinyStories) and [Databricks Dolly 15K](https://huggingface.co/datasets/databricks/databricks-dolly-15k)
 
 ## Setup
 

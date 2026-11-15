@@ -1,6 +1,6 @@
 # Member 1 — Model Architecture and Pretraining
 
-**Owner:** Akash Shivanand Bagoji  
+**Owner:** Akash Shivanand Bagoji (PES1UG24AM339)  
 **Scope:** decoder-only Transformer, standard causal attention, causal linear attention, shared pretraining engine, and controlled pretraining comparison.
 
 ## 1. Delivered implementation
