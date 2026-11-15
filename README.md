@@ -27,7 +27,7 @@ Details: `report/results.md`; write-up: `report/final_report.md`; every run: `ex
 
 ## Submission materials
 
-- Paper (IEEE format): `paper/main.tex`. Compile with IEEEtran on Overleaf; its figures are in `paper/` and `results/figures/`.
+- Paper (IEEE format): `paper/AFML_paper.pdf`, compiled from `paper/main.tex` (IEEEtran, Overleaf).
 - Slides on the official course template: `AFML_Final_Presentation_Template.pptx`
 - Presentation video script: `report/video_script.md`
 - Datasets: [TinyStories](https://huggingface.co/datasets/roneneldan/TinyStories) and [Databricks Dolly 15K](https://huggingface.co/datasets/databricks/databricks-dolly-15k)
