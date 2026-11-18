@@ -1,23 +1,23 @@
 # Methodology
 
-## 1. Data and tokenizer — *owner: Member 2 (Haneesh)*
+## 1. Data and tokenizer — *owner: Member 2 (Haneesh Elamati, PES1UG24AM471)*
 
 _To be written by Member 2: TinyStories subset size and selection, splits and seeds, tokenizer type and
 vocabulary size, special tokens, sequence construction; Dolly cleaning, splits, prompt template and
 response-only loss masking; dataset licences._
 
-## 2. Model and pre-training — *owner: Member 1 (Akash)*
+## 2. Model and pre-training — *owner: Member 1 (Akash Shivanand Bagoji, PES1UG24AM339)*
 
 _To be written by Member 1: decoder-only architecture (embeddings, positional encoding, blocks, attention,
 FFN, residuals, LayerNorm, output head), parameter count, initialisation, optimiser and schedule, token
 budget, checkpointing; the linear-attention variant and how its causal form is computed._
 
-## 3. Instruction fine-tuning — *owner: Member 2 (Haneesh)*
+## 3. Instruction fine-tuning — *owner: Member 2 (Haneesh Elamati, PES1UG24AM471)*
 
 _To be written by Member 2: which checkpoint is fine-tuned, hyper-parameters, number of steps/epochs,
 early-stopping rule._
 
-## 4. Evaluation — *owner: Member 3 (Samvith)*
+## 4. Evaluation — *owner: Member 3 (Samvith Vaddiparthi, PES1UG24AM468)*
 
 The full protocol, frozen before the final runs, is `report/evaluation_protocol.md`; this section
 summarises it.
